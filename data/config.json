@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "app": {
+    "name": {
+      "zh-CN": "同步记账",
+      "en-US": "Sync Spend"
+    },
+    "defaultLanguage": "zh-CN",
+    "baseCurrency": "CNY",
+    "timezone": "America/Monterrey",
+    "imageMaxWidth": 1600,
+    "imageQuality": 0.72,
+    "version": "0.6.2"
+  },
+  "cloudflare": {
+    "projectName": "sync-spend",
+    "workerUrl": "https://sync-spend-worker.287418456.workers.dev",
+    "accessPassword": "1123"
+  },
+  "consumers": [
+    {
+      "id": "consumer_evan",
+      "name": {
+        "zh-CN": "Evan",
+        "en-US": "Evan"
+      },
+      "active": true
+    }
+  ],
+  "currencies": [
+    {
+      "code": "CNY",
+      "name": {
+        "zh-CN": "人民币",
+        "en-US": "Chinese Yuan"
+      },
+      "symbol": "¥"
+    },
+    {
+      "code": "MXN",
+      "name": {
+        "zh-CN": "墨西哥比索",
+        "en-US": "Mexican Peso"
+      },
+      "symbol": "$"
+    },
+    {
+      "code": "TRY",
+      "name": {
+        "zh-CN": "土耳其里拉",
+        "en-US": "Turkish Lira"
+      },
+      "symbol": "₺"
+    }
+  ],
+  "exchange": {
+    "provider": "frankfurter",
+    "endpoint": "https://api.frankfurter.dev/v2/rates",
+    "base": "CNY",
+    "quotes": [
+      "MXN",
+      "TRY"
+    ],
+    "cacheSeconds": 0,
+    "manualToCny": {
+      "CNY": 1,
+      "MXN": 0.39,
+      "TRY": 0.17
+    }
+  }
+}
