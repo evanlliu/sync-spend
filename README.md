@@ -1,4 +1,4 @@
-# Sync Spend v0.6.2
+# Sync Spend v0.6.3
 
 PWA 多人记账本，前端部署在 GitHub，后端只需要在 Cloudflare 发布一个 `worker.js`。
 
@@ -124,21 +124,24 @@ data/config.json
 }
 ```
 
-汇率备用配置在：
+汇率配置在：
 
 ```json
 {
   "exchange": {
-    "manualToCny": {
-      "CNY": 1,
-      "MXN": 0.39,
-      "TRY": 0.17
-    }
+    "provider": "frankfurter",
+    "endpoint": "https://api.frankfurter.dev/v2/rates",
+    "base": "CNY",
+    "quotes": [
+      "MXN",
+      "TRY"
+    ],
+    "cacheSeconds": 0
   }
 }
 ```
 
-含义：`1 个对应货币 = 多少人民币`。系统新增记录时会实时请求 API 汇率，也可以在记录编辑界面手动修改本次汇率；API 失败时才使用 `manualToCny`。
+说明：系统只通过 Frankfurter API 实时获取汇率，不再读取 `manualToCny`，也不把 API 汇率写入 `config.json` 或 `data.json`。新增/编辑记录时仍可以手动修改“本次汇率”。保存记录会保留该记录实际使用的汇率，避免历史金额被未来汇率改变。
 
 注意：`config.json` 是前端可见文件，所以这里只能放普通访问密码和 Worker 地址，不能放 `GH_TOKEN`。
 
@@ -240,3 +243,12 @@ Deployment failed, try again later.
 - 上一次账本 ID 保存在浏览器本地 `localStorage`，不写入 GitHub 的 `data.json`。
 - 如果该账本已不存在，自动回到首页。
 
+
+
+## 9. V0.6.3 更新点
+
+- 移除 `config.exchange.manualToCny`。
+- Worker `/api/rates` 只实时调用 Frankfurter API 获取汇率。
+- 前端不再从 `config.json` 读取备用汇率，也不再把汇率缓存写入本地缓存。
+- 汇率 API 失败时，只保留 `CNY = 1`，MXN/TRY 需要刷新成功或在新增/编辑记录界面手动填写本次汇率。
+- 保留 `.nojekyll`，避免 GitHub Pages 走 Jekyll 构建失败。

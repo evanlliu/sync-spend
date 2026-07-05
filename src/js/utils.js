@@ -52,20 +52,23 @@ export function normalizeData(data) {
 export function normalizeConfig(config) {
   const fallback = {
     schemaVersion: 1,
-    app: { name: { "zh-CN": "同步记账", "en-US": "Sync Spend" }, version: "0.6.2", defaultLanguage: "zh-CN", baseCurrency: "CNY", imageMaxWidth: 1600, imageQuality: 0.72 },
+    app: { name: { "zh-CN": "同步记账", "en-US": "Sync Spend" }, version: "0.6.3", defaultLanguage: "zh-CN", baseCurrency: "CNY", imageMaxWidth: 1600, imageQuality: 0.72 },
     consumers: [],
     currencies: [
       { code: "CNY", name: { "zh-CN": "人民币", "en-US": "Chinese Yuan" }, symbol: "¥" },
       { code: "MXN", name: { "zh-CN": "墨西哥比索", "en-US": "Mexican Peso" }, symbol: "$" },
       { code: "TRY", name: { "zh-CN": "土耳其里拉", "en-US": "Turkish Lira" }, symbol: "₺" }
     ],
-    exchange: { provider: "frankfurter", base: "CNY", quotes: ["MXN", "TRY"], manualToCny: { CNY: 1 } }
+    exchange: { provider: "frankfurter", endpoint: "https://api.frankfurter.dev/v2/rates", base: "CNY", quotes: ["MXN", "TRY"], cacheSeconds: 0 }
   };
+  const exchange = { ...fallback.exchange, ...(config?.exchange || {}) };
+  delete exchange.manualToCny;
+
   return {
     ...fallback,
     ...config,
     app: { ...fallback.app, ...(config?.app || {}) },
-    exchange: { ...fallback.exchange, ...(config?.exchange || {}) },
+    exchange,
     consumers: Array.isArray(config?.consumers) ? config.consumers : fallback.consumers,
     currencies: Array.isArray(config?.currencies) ? config.currencies : fallback.currencies
   };

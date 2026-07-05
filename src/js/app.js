@@ -17,7 +17,7 @@ import {
   uid
 } from "./utils.js";
 
-const APP_VERSION = "0.6.2";
+const APP_VERSION = "0.6.3";
 const LAST_CURRENCY_KEY = "syncSpend.lastCurrency";
 const LAST_LEDGER_KEY = "syncSpend.lastLedgerId";
 const RATE_FETCH_DEBOUNCE_MS = 500;
@@ -252,7 +252,7 @@ function renderDashboard() {
 
 function renderRatesCard({ collapsed = false } = {}) {
   const rows = (state.config.currencies || []).map((currency) => {
-    const rate = getToCnyRate(currency.code, state.rates, state.config);
+    const rate = getToCnyRate(currency.code, state.rates);
     return el("div", { className: "rate-row" }, [
       el("span", { text: `${currency.code} · ${localizedName(currency.name, currency.code)}` }),
       el("strong", { text: rate ? `1 ${currency.code} = ${formatRate(rate)} CNY` : "-" })
@@ -265,7 +265,7 @@ function renderRatesCard({ collapsed = false } = {}) {
         el("h2", { text: t("exchangeRate") }),
         el("p", { className: "muted", text: `${t("updated")}: ${state.rates?.date || state.rates?.fetchedAt || "-"}` })
       ]),
-      el("span", { className: "pill", text: state.rates?.fallback ? "manual" : state.rates?.provider || "-" })
+      el("span", { className: "pill", text: state.rates?.error ? "api error" : state.rates?.provider || "-" })
     ]),
     el("div", { className: "collapsible-body" }, [
       ...rows,
@@ -543,7 +543,7 @@ function showExpenseModal(ledger, record = null) {
     amount: "",
     currency: getPreferredCurrency(),
     amountCny: 0,
-    rateToCny: 1,
+    rateToCny: null,
     rateSource: "live",
     splitMode: "equal",
     splitParticipantIds: ledgerParticipantIds.slice(),
@@ -553,7 +553,7 @@ function showExpenseModal(ledger, record = null) {
     createdAt: new Date().toISOString()
   };
 
-  if (!editing) draft.rateToCny = getToCnyRate(draft.currency, state.rates, state.config) || 1;
+  if (!editing) draft.rateToCny = getToCnyRate(draft.currency, state.rates);
   draft.splitMode = draft.splitMode === "amount" ? "amount" : "equal";
   draft.splitParticipantIds = sanitizeSplitParticipants(draft, ledgerParticipantIds);
   if (!draft.splitParticipantIds.length) draft.splitParticipantIds = ledgerParticipantIds.slice();
@@ -563,7 +563,7 @@ function showExpenseModal(ledger, record = null) {
   const amountInput = input({ name: "amount", type: "number", step: "0.01", min: "0", value: draft.amount, required: true });
   const currencySelect = selectInput("currency", (state.config.currencies || []).map((item) => ({ value: item.code, label: `${item.code} · ${localizedName(item.name, item.code)}` })), draft.currency);
   const dateInput = input({ name: "date", type: "date", value: draft.date || todayInputValue(), required: true });
-  const rateInput = input({ name: "rateToCny", type: "number", step: "0.0001", min: "0", value: formatRate(draft.rateToCny || getToCnyRate(draft.currency, state.rates, state.config) || 1), required: true });
+  const rateInput = input({ name: "rateToCny", type: "number", step: "0.0001", min: "0", value: formatRate(draft.rateToCny || getToCnyRate(draft.currency, state.rates)), required: true });
   const rateRefreshButton = el("button", { className: "btn ghost small", text: t("useLiveRate"), attrs: { type: "button" }, on: { click: () => fetchLiveRateForForm(true) } });
   const cnyPreview = el("strong", { text: "-" });
   const splitModeSelect = selectInput("splitMode", [
@@ -741,10 +741,10 @@ function showExpenseModal(ledger, record = null) {
       state.rates = payload.rates;
       state.lastSync = new Date().toISOString();
       updateCache();
-      const rate = getToCnyRate(currencySelect.value, state.rates, state.config);
+      const rate = getToCnyRate(currencySelect.value, state.rates);
       if (rate) {
         rateInput.value = formatRate(rate);
-        draft.rateSource = state.rates?.fallback ? "fallback" : "live";
+        draft.rateSource = state.rates?.error ? "live-error" : "live";
         updatePreview(true);
         renderSplitAmountInputs({ resetAmountDefaults: splitModeSelect.value === "amount" });
       }

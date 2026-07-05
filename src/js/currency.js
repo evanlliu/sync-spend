@@ -1,17 +1,14 @@
 const RATE_DECIMALS = 4;
 const RATE_FACTOR = 10 ** RATE_DECIMALS;
 
-export function getToCnyRate(currency, rates, config) {
+export function getToCnyRate(currency, rates) {
   if (currency === "CNY") return 1;
   const live = normalizeRate(rates?.toCny?.[currency]);
-  if (live) return live;
-  const manual = normalizeRate(config?.exchange?.manualToCny?.[currency]);
-  if (manual) return manual;
-  return null;
+  return live || null;
 }
 
 export function toCny(amount, currency, rates, config, overrideRate = null) {
-  const rate = normalizeRate(overrideRate) || getToCnyRate(currency, rates, config);
+  const rate = normalizeRate(overrideRate) || getToCnyRate(currency, rates);
   return convertWithRate(amount, rate);
 }
 

@@ -15,6 +15,7 @@
  *
  * V0.6: 汇率统一保留 4 位小数；新增记录金额输入/货币切换实时刷新最新汇率。
  * V0.6.2: 页面刷新后默认打开上一次打开的账本。
+ * V0.6.3: 汇率只实时调用 Frankfurter API，不再读取 config.manualToCny，也不保存汇率缓存。
  */
 
 const JSON_HEADERS = {
@@ -43,7 +44,7 @@ async function handleApiRequest(context) {
       return json({
         ok: true,
         app: "sync-spend",
-        version: "0.6.2",
+        version: "0.6.3",
         mode: "single-file-worker",
         hasPassword: Boolean(env.APP_PASSWORD),
         hasGithubToken: Boolean(env.GH_TOKEN),
@@ -244,7 +245,7 @@ async function getRates(config) {
   const base = exchange.base || "CNY";
   const quotes = Array.isArray(exchange.quotes) ? exchange.quotes : ["MXN", "TRY"];
   const endpoint = exchange.endpoint || "https://api.frankfurter.dev/v2/rates";
-  const toCny = normalizeManualToCny(exchange.manualToCny);
+  const toCny = { CNY: 1 };
 
   try {
     const url = new URL(endpoint);
@@ -281,24 +282,15 @@ async function getRates(config) {
     };
   } catch (error) {
     return {
-      provider: "manual",
-      sourceBase: "CNY",
+      provider: "frankfurter",
+      sourceBase: base,
       date: null,
       toCny,
       fetchedAt: new Date().toISOString(),
-      fallback: true,
+      fallback: false,
       error: error.message
     };
   }
-}
-
-function normalizeManualToCny(manualToCny = {}) {
-  const toCny = { CNY: 1 };
-  for (const [currency, value] of Object.entries(manualToCny || {})) {
-    const rate = roundRate(Number(value));
-    if (rate) toCny[currency] = rate;
-  }
-  return toCny;
 }
 
 function validateData(data) {

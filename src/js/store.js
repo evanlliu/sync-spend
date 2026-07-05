@@ -10,7 +10,7 @@ export const state = {
   showArchived: false,
   data: normalizeData(),
   config: normalizeConfig(),
-  rates: { provider: "manual", toCny: { CNY: 1 }, fallback: true },
+  rates: { provider: "frankfurter", toCny: { CNY: 1 }, fallback: false },
   dataSha: null,
   configSha: null,
   lastSync: null
@@ -28,7 +28,6 @@ export function setBootstrap(payload) {
   localStorage.setItem("syncSpend.cache", JSON.stringify({
     data: state.data,
     config: state.config,
-    rates: state.rates,
     lastSync: state.lastSync
   }));
 }
@@ -39,7 +38,6 @@ export function loadCache() {
     if (!cache) return false;
     state.data = normalizeData(cache.data);
     state.config = normalizeConfig(cache.config);
-    state.rates = cache.rates || state.rates;
     state.lastSync = cache.lastSync || null;
     state.ready = true;
     return true;
@@ -52,7 +50,6 @@ export function updateCache() {
   localStorage.setItem("syncSpend.cache", JSON.stringify({
     data: state.data,
     config: state.config,
-    rates: state.rates,
     lastSync: state.lastSync
   }));
 }
