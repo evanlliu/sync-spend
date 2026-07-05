@@ -15,7 +15,7 @@
  *
  * V0.6: 汇率统一保留 4 位小数；新增记录金额输入/货币切换实时刷新最新汇率。
  * V0.6.2: 页面刷新后默认打开上一次打开的账本。
- * V0.6.3: 汇率只实时调用 Frankfurter API，不再读取 config.manualToCny，也不保存汇率缓存。
+ * V0.6.4: 汇率只实时调用 Frankfurter API，不再读取 config.manualToCny，也不保存汇率缓存。
  */
 
 const JSON_HEADERS = {
@@ -44,7 +44,7 @@ async function handleApiRequest(context) {
       return json({
         ok: true,
         app: "sync-spend",
-        version: "0.6.3",
+        version: "0.6.4",
         mode: "single-file-worker",
         hasPassword: Boolean(env.APP_PASSWORD),
         hasGithubToken: Boolean(env.GH_TOKEN),
@@ -243,7 +243,7 @@ async function writeJsonFile(env, filePath, value, expectedSha, message) {
 async function getRates(config) {
   const exchange = config.exchange || {};
   const base = exchange.base || "CNY";
-  const quotes = Array.isArray(exchange.quotes) ? exchange.quotes : ["MXN", "TRY"];
+  const quotes = uniqueCurrencies(Array.isArray(exchange.quotes) ? exchange.quotes : ["MXN", "TRY"]);
   const endpoint = exchange.endpoint || "https://api.frankfurter.dev/v2/rates";
   const toCny = { CNY: 1 };
 
@@ -262,20 +262,20 @@ async function getRates(config) {
 
     if (!res.ok) throw new Error(`Frankfurter HTTP ${res.status}`);
     const payload = await res.json();
-    const rates = payload.rates || {};
+    const parsed = parseFrankfurterRates(payload, base, quotes);
 
-    for (const quote of quotes) {
-      const rate = Number(rates[quote]);
-      if (quote !== "CNY" && Number.isFinite(rate) && rate > 0) {
-        // API returns: 1 CNY = rate quoteCurrency. We need: 1 quoteCurrency = x CNY.
-        toCny[quote] = roundRate(1 / rate);
-      }
+    Object.assign(toCny, parsed.toCny);
+
+    const missing = quotes.filter((quote) => quote !== "CNY" && !toCny[quote]);
+    if (missing.length) {
+      throw new Error(`Frankfurter missing rates: ${missing.join(", ")}`);
     }
 
     return {
       provider: "frankfurter",
       sourceBase: base,
-      date: payload.date || null,
+      sourceUrl: url.toString(),
+      date: parsed.date,
       toCny,
       fetchedAt: new Date().toISOString(),
       fallback: false
@@ -291,6 +291,55 @@ async function getRates(config) {
       error: error.message
     };
   }
+}
+
+function parseFrankfurterRates(payload, base, quotes) {
+  const toCny = {};
+  let date = null;
+
+  // Frankfurter v2 /rates returns an array:
+  // [{ date, base: "CNY", quote: "MXN", rate: 2.55 }, ...]
+  // Code must not read payload.rates for v2.
+  if (Array.isArray(payload)) {
+    for (const row of payload) {
+      if (!row || typeof row !== "object") continue;
+      const rowBase = normalizeCurrencyCode(row.base || base);
+      const quote = normalizeCurrencyCode(row.quote);
+      const rate = Number(row.rate);
+      if (!date && row.date) date = row.date;
+      if (!quote || !Number.isFinite(rate) || rate <= 0) continue;
+
+      if (quote === "CNY") {
+        // 1 rowBase = rate CNY
+        toCny[rowBase] = roundRate(rate);
+      } else if (rowBase === "CNY") {
+        // 1 CNY = rate quote; convert to: 1 quote = 1/rate CNY
+        toCny[quote] = roundRate(1 / rate);
+      }
+    }
+    return { toCny, date };
+  }
+
+  // Compatibility with object-style APIs such as Frankfurter v1:
+  // { base: "CNY", date: "...", rates: { MXN: 2.55, TRY: 5.8 } }
+  const objectRates = payload?.rates || {};
+  date = payload?.date || null;
+  for (const quote of quotes) {
+    const code = normalizeCurrencyCode(quote);
+    const rate = Number(objectRates[code]);
+    if (code !== "CNY" && Number.isFinite(rate) && rate > 0) {
+      toCny[code] = roundRate(1 / rate);
+    }
+  }
+  return { toCny, date };
+}
+
+function uniqueCurrencies(currencies) {
+  return Array.from(new Set(currencies.map(normalizeCurrencyCode).filter(Boolean)));
+}
+
+function normalizeCurrencyCode(value) {
+  return String(value || "").trim().toUpperCase();
 }
 
 function validateData(data) {

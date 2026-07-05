@@ -1,4 +1,4 @@
-# Sync Spend v0.6.3
+# Sync Spend v0.6.4
 
 PWA 多人记账本，前端部署在 GitHub，后端只需要在 Cloudflare 发布一个 `worker.js`。
 
@@ -245,7 +245,7 @@ Deployment failed, try again later.
 
 
 
-## 9. V0.6.3 更新点
+## 9. V0.6.4 更新点
 
 - 移除 `config.exchange.manualToCny`。
 - Worker `/api/rates` 只实时调用 Frankfurter API 获取汇率。

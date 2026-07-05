@@ -10,7 +10,7 @@
     "timezone": "America/Monterrey",
     "imageMaxWidth": 1600,
     "imageQuality": 0.72,
-    "version": "0.6.3"
+    "version": "0.6.4"
   },
   "cloudflare": {
     "projectName": "sync-spend",

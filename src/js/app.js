@@ -17,7 +17,7 @@ import {
   uid
 } from "./utils.js";
 
-const APP_VERSION = "0.6.3";
+const APP_VERSION = "0.6.4";
 const LAST_CURRENCY_KEY = "syncSpend.lastCurrency";
 const LAST_LEDGER_KEY = "syncSpend.lastLedgerId";
 const RATE_FETCH_DEBOUNCE_MS = 500;
