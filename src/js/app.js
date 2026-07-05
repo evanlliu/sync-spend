@@ -3,6 +3,7 @@ import { equalShareMap, ledgerSummary, recordShareMap, sanitizeSplitParticipants
 import { convertWithRate, formatRate, getToCnyRate, normalizeRate, roundMoney } from "./currency.js";
 import { getLanguage, LANGS, localizedName, setLanguage, t } from "./i18n.js";
 import { activeConsumers, getLedger, loadCache, setBootstrap, state, updateCache } from "./store.js";
+import { APP_VERSION } from "./version.js";
 import {
   clear,
   clone,
@@ -17,7 +18,6 @@ import {
   uid
 } from "./utils.js";
 
-const APP_VERSION = "0.6.5";
 const LAST_CURRENCY_KEY = "syncSpend.lastCurrency";
 const LAST_LEDGER_KEY = "syncSpend.lastLedgerId";
 const RATE_FETCH_DEBOUNCE_MS = 500;
@@ -87,7 +87,7 @@ function getAppTitle() {
 }
 
 function getAppVersion() {
-  return String(state.config?.app?.version || APP_VERSION).replace(/^v/i, "");
+  return String(APP_VERSION).replace(/^v/i, "");
 }
 
 function updateDocumentTitle() {

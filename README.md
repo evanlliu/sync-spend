@@ -1,4 +1,4 @@
-# Sync Spend v0.6.5
+# Sync Spend v0.6.6
 
 PWA 多人记账本，前端部署在 GitHub，后端只需要在 Cloudflare 发布一个 `worker.js`。
 
@@ -251,3 +251,10 @@ Deployment failed, try again later.
 - “应收/应付”区域从横向滚动表格改为自适应明细行，已付、分摊、净额完整显示。
 - 账本标题区域高度压缩，减少顶部占用，让下面的统计卡片和记账记录露出更多。
 - 继续保留 `.nojekyll`，避免 GitHub Pages 走 Jekyll 构建失败。
+
+
+## 11. V0.6.6 更新点
+
+- 版本号从 `data/config.json` 移除，避免覆盖用户的 Cloudflare 地址、访问密码、消费者等配置。
+- 新增 `src/js/version.js` 作为前端版本号来源。以后升级版本只更新代码文件，不要求覆盖 `data/config.json`。
+- `data/config.json` 和 `data/data.json` 属于用户数据文件，后续发布默认不覆盖。

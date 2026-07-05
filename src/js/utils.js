@@ -52,7 +52,7 @@ export function normalizeData(data) {
 export function normalizeConfig(config) {
   const fallback = {
     schemaVersion: 1,
-    app: { name: { "zh-CN": "同步记账", "en-US": "Sync Spend" }, version: "0.6.5", defaultLanguage: "zh-CN", baseCurrency: "CNY", imageMaxWidth: 1600, imageQuality: 0.72 },
+    app: { name: { "zh-CN": "同步记账", "en-US": "Sync Spend" }, defaultLanguage: "zh-CN", baseCurrency: "CNY", imageMaxWidth: 1600, imageQuality: 0.72 },
     consumers: [],
     currencies: [
       { code: "CNY", name: { "zh-CN": "人民币", "en-US": "Chinese Yuan" }, symbol: "¥" },

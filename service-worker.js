@@ -1,4 +1,4 @@
-const CACHE_NAME = "sync-spend-shell-v065";
+const CACHE_NAME = "sync-spend-shell-v066";
 const RELATIVE_APP_SHELL = [
   "./",
   "./index.html",
@@ -12,6 +12,7 @@ const RELATIVE_APP_SHELL = [
   "./src/js/i18n.js",
   "./src/js/store.js",
   "./src/js/utils.js",
+  "./src/js/version.js",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
   "./assets/icons/apple-touch-icon-180.png"

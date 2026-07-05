@@ -15,7 +15,7 @@
  *
  * V0.6: 汇率统一保留 4 位小数；新增记录金额输入/货币切换实时刷新最新汇率。
  * V0.6.2: 页面刷新后默认打开上一次打开的账本。
- * V0.6.5: 汇率只实时调用 Frankfurter API，不再读取 config.manualToCny，也不保存汇率缓存。
+ * V0.6.6: 版本号从 config.json 移除，避免覆盖用户自定义配置。
  */
 
 const JSON_HEADERS = {
@@ -44,7 +44,7 @@ async function handleApiRequest(context) {
       return json({
         ok: true,
         app: "sync-spend",
-        version: "0.6.5",
+        version: "0.6.6",
         mode: "single-file-worker",
         hasPassword: Boolean(env.APP_PASSWORD),
         hasGithubToken: Boolean(env.GH_TOKEN),
