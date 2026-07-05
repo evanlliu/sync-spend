@@ -1,7 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-05T21:27:36.674Z",
+  "updatedAt": "2026-07-05T21:36:25.689Z",
   "ledgers": [
+    {
+      "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
+      "name": "墨西哥公共生活费",
+      "archived": false,
+      "participantIds": [
+        "consumer_evan",
+        "consumer_mr8b5dem_r23g5l93jxnr"
+      ],
+      "records": [],
+      "createdAt": "2026-07-05T21:36:20.135Z"
+    },
     {
       "id": "ledger_mr8ay79i_12cx8mts9p6o1",
       "name": "测试",
