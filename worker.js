@@ -16,7 +16,7 @@
  * V0.6: 汇率统一保留 4 位小数；新增记录金额输入/货币切换实时刷新最新汇率。
  * V0.6.2: 页面刷新后默认打开上一次打开的账本。
  * V0.6.6: 版本号从 config.json 移除，避免覆盖用户自定义配置。
- * V0.6.7: 已归档账本支持确认后永久删除；首页归档和汇率默认折叠，汇率移到归档下面。
+ * V0.6.8: 新增/编辑弹窗标题栏和底部保存区固定，表单内容独立滚动。
  */
 
 const JSON_HEADERS = {
@@ -45,7 +45,7 @@ async function handleApiRequest(context) {
       return json({
         ok: true,
         app: "sync-spend",
-        version: "0.6.7",
+        version: "0.6.8",
         mode: "single-file-worker",
         hasPassword: Boolean(env.APP_PASSWORD),
         hasGithubToken: Boolean(env.GH_TOKEN),
