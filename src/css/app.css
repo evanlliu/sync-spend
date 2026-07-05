@@ -207,6 +207,106 @@ textarea {
   gap: 14px;
 }
 
+.summary-grid {
+  grid-template-columns: minmax(230px, 0.85fr) minmax(430px, 1.35fr) minmax(260px, 1fr);
+  align-items: stretch;
+}
+
+.ledger-hero {
+  padding: 16px 28px;
+  min-height: 132px;
+}
+
+.ledger-hero h1 {
+  margin: 8px 0 8px;
+  font-size: clamp(30px, 4.2vw, 48px);
+  line-height: 1.02;
+}
+
+.ledger-hero .muted {
+  margin: 0;
+}
+
+.ledger-hero-main {
+  min-width: 0;
+}
+
+.total-card,
+.balance-card {
+  min-width: 0;
+}
+
+.currency-totals {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.currency-total-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.currency-total-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: var(--ink);
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.38);
+  border: 1px solid rgba(23, 32, 51, 0.08);
+}
+
+.currency-totals-empty {
+  margin: 10px 0 12px;
+}
+
+.balance-list {
+  display: grid;
+  gap: 8px;
+}
+
+.balance-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 0.75fr) minmax(0, 2fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid rgba(23, 32, 51, 0.08);
+}
+
+.balance-name {
+  overflow-wrap: anywhere;
+}
+
+.balance-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.balance-values span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.balance-values small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.balance-values b {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .ledger-card,
 .record-item,
 .consumer-item {
@@ -628,6 +728,28 @@ textarea {
   .main {
     width: calc(100% - 16px);
     margin-top: 10px;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ledger-hero {
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .ledger-hero h1 {
+    font-size: clamp(28px, 9vw, 40px);
+  }
+
+  .balance-row,
+  .balance-values {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-values {
+    gap: 6px;
   }
 
   .hero,

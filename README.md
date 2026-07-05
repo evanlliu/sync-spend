@@ -1,4 +1,4 @@
-# Sync Spend v0.6.4
+# Sync Spend v0.6.5
 
 PWA 多人记账本，前端部署在 GitHub，后端只需要在 Cloudflare 发布一个 `worker.js`。
 
@@ -245,10 +245,9 @@ Deployment failed, try again later.
 
 
 
-## 9. V0.6.4 更新点
+## 10. V0.6.5 更新点
 
-- 移除 `config.exchange.manualToCny`。
-- Worker `/api/rates` 只实时调用 Frankfurter API 获取汇率。
-- 前端不再从 `config.json` 读取备用汇率，也不再把汇率缓存写入本地缓存。
-- 汇率 API 失败时，只保留 `CNY = 1`，MXN/TRY 需要刷新成功或在新增/编辑记录界面手动填写本次汇率。
-- 保留 `.nojekyll`，避免 GitHub Pages 走 Jekyll 构建失败。
+- 账本详情页“总消费”继续显示人民币总额，同时新增原币合计，例如 MXN/CNY/TRY 各自合计。
+- “应收/应付”区域从横向滚动表格改为自适应明细行，已付、分摊、净额完整显示。
+- 账本标题区域高度压缩，减少顶部占用，让下面的统计卡片和记账记录露出更多。
+- 继续保留 `.nojekyll`，避免 GitHub Pages 走 Jekyll 构建失败。

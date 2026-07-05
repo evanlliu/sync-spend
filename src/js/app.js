@@ -17,7 +17,7 @@ import {
   uid
 } from "./utils.js";
 
-const APP_VERSION = "0.6.4";
+const APP_VERSION = "0.6.5";
 const LAST_CURRENCY_KEY = "syncSpend.lastCurrency";
 const LAST_LEDGER_KEY = "syncSpend.lastLedgerId";
 const RATE_FETCH_DEBOUNCE_MS = 500;
@@ -318,8 +318,8 @@ function metric(label, value) {
 function renderLedgerDetail(ledger) {
   const summary = ledgerSummary(ledger, state.config);
   return el("section", { className: "ledger-detail" }, [
-    el("div", { className: "hero glass" }, [
-      el("div", {}, [
+    el("div", { className: "hero glass ledger-hero" }, [
+      el("div", { className: "ledger-hero-main" }, [
         el("button", { className: "btn ghost small", text: `← ${t("back")}`, on: { click: () => navigate("dashboard") } }),
         el("h1", { text: ledger.name }),
         el("p", { className: "muted", text: `${t("createdAt")}: ${formatDateTime(ledger.createdAt)}` })
@@ -331,9 +331,10 @@ function renderLedgerDetail(ledger) {
       ])
     ]),
     el("div", { className: "summary-grid" }, [
-      el("article", { className: "glass card" }, [
+      el("article", { className: "glass card total-card" }, [
         el("h2", { text: t("total") }),
         el("div", { className: "big-number", text: money(summary.totalCny, "CNY") }),
+        renderCurrencyTotals(summary),
         el("p", { className: "muted", text: `${t("perPerson")}: ${money(summary.perPerson, "CNY")}` }),
         summary.unallocatedCny > 0.01 ? el("p", { className: "hint warn", text: `${t("unallocated")}: ${money(summary.unallocatedCny, "CNY")}` }) : null
       ]),
@@ -344,27 +345,38 @@ function renderLedgerDetail(ledger) {
   ]);
 }
 
+function renderCurrencyTotals(summary) {
+  const entries = Object.entries(summary.totalByCurrency || {})
+    .filter(([, value]) => Math.abs(Number(value || 0)) > 0.001)
+    .sort(([a], [b]) => {
+      if (a === "CNY") return -1;
+      if (b === "CNY") return 1;
+      return a.localeCompare(b);
+    });
+
+  if (!entries.length) return el("p", { className: "muted currency-totals-empty", text: `${t("currencyTotals")}: -` });
+
+  return el("div", { className: "currency-totals" }, [
+    el("span", { text: t("currencyTotals") }),
+    el("div", { className: "currency-total-list" }, entries.map(([currency, value]) => (
+      el("strong", { className: "currency-total-pill", text: money(value, currency) })
+    )))
+  ]);
+}
+
 function renderBalances(summary) {
-  const rows = summary.balances.map((item) => el("tr", {}, [
-    el("td", { text: localizedName(item.consumer.name, item.consumerId) }),
-    el("td", { text: money(item.paid, "CNY") }),
-    el("td", { text: money(item.share, "CNY") }),
-    el("td", { className: item.balance >= 0 ? "pos" : "neg", text: money(item.balance, "CNY") })
+  const rows = summary.balances.map((item) => el("div", { className: "balance-row" }, [
+    el("strong", { className: "balance-name", text: localizedName(item.consumer.name, item.consumerId) }),
+    el("div", { className: "balance-values" }, [
+      el("span", {}, [el("small", { text: t("paid") }), el("b", { text: money(item.paid, "CNY") })]),
+      el("span", {}, [el("small", { text: t("shareAmount") }), el("b", { text: money(item.share, "CNY") })]),
+      el("span", {}, [el("small", { text: t("net") }), el("b", { className: item.balance >= 0 ? "pos" : "neg", text: money(item.balance, "CNY") })])
+    ])
   ]));
 
-  return el("article", { className: "glass card wide" }, [
+  return el("article", { className: "glass card balance-card" }, [
     el("h2", { text: t("balance") }),
-    el("div", { className: "table-wrap" }, [
-      el("table", { className: "table" }, [
-        el("thead", {}, el("tr", {}, [
-          el("th", { text: t("consumer") }),
-          el("th", { text: t("paid") }),
-          el("th", { text: t("shareAmount") }),
-          el("th", { text: t("net") })
-        ])),
-        el("tbody", {}, rows)
-      ])
-    ])
+    el("div", { className: "balance-list" }, rows)
   ]);
 }
 

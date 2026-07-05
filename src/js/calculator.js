@@ -10,10 +10,15 @@ export function ledgerSummary(ledger, config) {
   const paidBy = Object.fromEntries(participantIds.map((id) => [id, 0]));
   const shareBy = Object.fromEntries(participantIds.map((id) => [id, 0]));
   const records = Array.isArray(ledger.records) ? ledger.records.filter((record) => !record.deleted) : [];
+  const totalByCurrency = {};
   let totalCny = 0;
   let allocatedCny = 0;
 
   for (const record of records) {
+    const originalCurrency = record.currency || "CNY";
+    const originalAmount = roundMoney(record.amount || 0);
+    totalByCurrency[originalCurrency] = roundMoney((totalByCurrency[originalCurrency] || 0) + originalAmount);
+
     const amount = roundMoney(record.amountCny || 0);
     totalCny = roundMoney(totalCny + amount);
 
@@ -40,6 +45,7 @@ export function ledgerSummary(ledger, config) {
     participants,
     records,
     totalCny,
+    totalByCurrency,
     allocatedCny,
     unallocatedCny: roundMoney(totalCny - allocatedCny),
     perPerson,
