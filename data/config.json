@@ -5,17 +5,12 @@
       "zh-CN": "同步记账",
       "en-US": "Sync Spend"
     },
+    "version": "0.6.4",
     "defaultLanguage": "zh-CN",
     "baseCurrency": "CNY",
-    "timezone": "America/Monterrey",
     "imageMaxWidth": 1600,
     "imageQuality": 0.72,
-    "version": "0.6.4"
-  },
-  "cloudflare": {
-    "projectName": "sync-spend",
-    "workerUrl": "https://sync-spend-worker.287418456.workers.dev",
-    "accessPassword": "1123"
+    "timezone": "America/Monterrey"
   },
   "consumers": [
     {
@@ -23,6 +18,14 @@
       "name": {
         "zh-CN": "Evan",
         "en-US": "Evan"
+      },
+      "active": true
+    },
+    {
+      "id": "consumer_mr8b5dem_r23g5l93jxnr",
+      "name": {
+        "zh-CN": "吴恒",
+        "en-US": "Henry"
       },
       "active": true
     }
@@ -62,5 +65,10 @@
       "TRY"
     ],
     "cacheSeconds": 0
+  },
+  "cloudflare": {
+    "projectName": "sync-spend",
+    "workerUrl": "https://sync-spend-worker.287418456.workers.dev",
+    "accessPassword": "1123"
   }
 }
