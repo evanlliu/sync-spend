@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-05T21:14:39.333Z",
+  "updatedAt": "2026-07-05T21:14:55.469Z",
   "ledgers": [
     {
       "id": "ledger_mr8ahi0u_1bb4z5oahlewf",
@@ -10,8 +10,30 @@
         "consumer_evan",
         "consumer_mr8ah55s_1abqjbg175w4w6"
       ],
-      "records": [],
-      "createdAt": "2026-07-05T21:14:35.262Z"
+      "records": [
+        {
+          "id": "record_mr8ahphr_1wf3jbl1iia25z",
+          "date": "2026-07-05",
+          "consumerId": "consumer_evan",
+          "amount": 100,
+          "currency": "MXN",
+          "amountCny": 39,
+          "rateToCny": 0.39,
+          "rateSource": "live",
+          "splitMode": "equal",
+          "splitParticipantIds": [
+            "consumer_evan",
+            "consumer_mr8ah55s_1abqjbg175w4w6"
+          ],
+          "splitAmountsCny": {},
+          "note": "",
+          "photo": null,
+          "createdAt": "2026-07-05T21:14:44.943Z",
+          "updatedAt": "2026-07-05T21:14:55.208Z"
+        }
+      ],
+      "createdAt": "2026-07-05T21:14:35.262Z",
+      "updatedAt": "2026-07-05T21:14:55.209Z"
     }
   ]
 }
