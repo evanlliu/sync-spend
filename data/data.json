@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-05T21:37:29.200Z",
+  "updatedAt": "2026-07-05T21:42:11.292Z",
   "ledgers": [
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
@@ -15,9 +15,9 @@
           "id": "record_mr8baqle_1vuakb2jx1fs0",
           "date": "2026-07-05",
           "consumerId": "consumer_mr8b5dem_r23g5l93jxnr",
-          "amount": 1000,
+          "amount": 500,
           "currency": "MXN",
-          "amountCny": 388,
+          "amountCny": 194,
           "rateToCny": 0.388,
           "rateSource": "live",
           "splitMode": "equal",
@@ -29,7 +29,7 @@
           "note": "",
           "photo": null,
           "createdAt": "2026-07-05T21:37:19.394Z",
-          "updatedAt": "2026-07-05T21:37:28.940Z"
+          "updatedAt": "2026-07-05T21:42:11.015Z"
         },
         {
           "id": "record_mr8b9n77_12mleww1r2qlya",
@@ -53,7 +53,7 @@
         }
       ],
       "createdAt": "2026-07-05T21:36:20.135Z",
-      "updatedAt": "2026-07-05T21:37:28.940Z"
+      "updatedAt": "2026-07-05T21:42:11.015Z"
     },
     {
       "id": "ledger_mr8ay79i_12cx8mts9p6o1",
