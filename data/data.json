@@ -1,5 +1,16 @@
 {
   "schemaVersion": 1,
-  "updatedAt": null,
-  "ledgers": []
+  "updatedAt": "2026-07-05T21:27:36.674Z",
+  "ledgers": [
+    {
+      "id": "ledger_mr8ay79i_12cx8mts9p6o1",
+      "name": "测试",
+      "archived": false,
+      "participantIds": [
+        "consumer_evan"
+      ],
+      "records": [],
+      "createdAt": "2026-07-05T21:27:34.471Z"
+    }
+  ]
 }
