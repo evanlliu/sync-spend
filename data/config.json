@@ -64,9 +64,7 @@
       "TRY"
     ],
     "manualToCny": {
-      "CNY": 1,
-      "MXN": 0.39,
-      "TRY": 0.17
+     
     },
     "endpoint": "https://api.frankfurter.dev/v2/rates",
     "cacheSeconds": 0
