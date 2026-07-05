@@ -317,6 +317,19 @@ textarea {
   gap: 16px;
 }
 
+
+.ledger-list-body {
+  padding-top: 10px;
+}
+
+.ledger-collapsible-body {
+  padding-top: 16px;
+}
+
+.archived-ledger-section:not([open]) .collapsible-summary {
+  margin-bottom: calc(clamp(18px, 3vw, 28px) * -1);
+}
+
 .ledger-card h3 {
   margin: 0 0 8px;
   font-size: 22px;

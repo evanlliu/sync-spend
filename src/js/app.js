@@ -213,6 +213,10 @@ function getLastOpenedLedgerId() {
   return localStorage.getItem(LAST_LEDGER_KEY) || "";
 }
 
+function clearLastOpenedLedgerId(ledgerId) {
+  if (!ledgerId || getLastOpenedLedgerId() === ledgerId) localStorage.removeItem(LAST_LEDGER_KEY);
+}
+
 function restoreLastOpenedLedger() {
   const ledgerId = getLastOpenedLedgerId();
   if (ledgerId && getLedger(ledgerId)) {
@@ -243,9 +247,9 @@ function renderDashboard() {
         el("button", { className: "btn ghost", text: t("refreshRate"), on: { click: refreshRates } })
       ])
     ]),
-    renderRatesCard({ collapsed: true }),
     renderLedgerList(t("activeLedgers"), active, false),
-    renderLedgerList(t("archivedLedgers"), archived, true)
+    renderLedgerList(t("archivedLedgers"), archived, true),
+    renderRatesCard({ collapsed: true })
   );
   return section;
 }
@@ -275,22 +279,31 @@ function renderRatesCard({ collapsed = false } = {}) {
 }
 
 function renderLedgerList(title, ledgers, archived) {
-  const list = el("section", { className: "glass card ledger-section" }, [
-    el("div", { className: "card-head" }, [
-      el("h2", { text: title }),
-      el("span", { className: "pill", text: String(ledgers.length) })
-    ])
-  ]);
+  const headChildren = [
+    el("h2", { text: title }),
+    el("span", { className: "pill", text: String(ledgers.length) })
+  ];
 
+  const body = el("div", { className: archived ? "collapsible-body ledger-collapsible-body" : "ledger-list-body" });
   if (!ledgers.length) {
-    list.append(el("p", { className: "muted", text: archived ? "-" : t("noLedger") }));
-    return list;
+    body.append(el("p", { className: "muted", text: archived ? "-" : t("noLedger") }));
+  } else {
+    const grid = el("div", { className: "ledger-grid" });
+    for (const ledger of ledgers) grid.append(renderLedgerCard(ledger));
+    body.append(grid);
   }
 
-  const grid = el("div", { className: "ledger-grid" });
-  for (const ledger of ledgers) grid.append(renderLedgerCard(ledger));
-  list.append(grid);
-  return list;
+  if (archived) {
+    return el("details", { className: "glass card ledger-section collapsible-card archived-ledger-section" }, [
+      el("summary", { className: "card-head collapsible-summary" }, headChildren),
+      body
+    ]);
+  }
+
+  return el("section", { className: "glass card ledger-section" }, [
+    el("div", { className: "card-head" }, headChildren),
+    body
+  ]);
 }
 
 function renderLedgerCard(ledger) {
@@ -306,7 +319,8 @@ function renderLedgerCard(ledger) {
     ]),
     el("div", { className: "row-actions" }, [
       el("button", { className: "btn primary small", text: t("openLedger"), on: { click: () => navigate("ledger", ledger.id) } }),
-      el("button", { className: "btn ghost small", text: ledger.archived ? t("unarchive") : t("archive"), on: { click: () => toggleArchive(ledger.id) } })
+      el("button", { className: "btn ghost small", text: ledger.archived ? t("unarchive") : t("archive"), on: { click: () => toggleArchive(ledger.id) } }),
+      ledger.archived ? el("button", { className: "btn danger small", text: t("deleteLedger"), on: { click: () => deleteArchivedLedger(ledger.id) } }) : null
     ])
   ]);
 }
@@ -327,7 +341,8 @@ function renderLedgerDetail(ledger) {
       el("div", { className: "hero-actions" }, [
         el("button", { className: "btn primary", text: t("addExpense"), on: { click: () => showExpenseModal(ledger) } }),
         el("button", { className: "btn ghost", text: t("edit"), on: { click: () => showLedgerModal(ledger) } }),
-        el("button", { className: "btn ghost", text: ledger.archived ? t("unarchive") : t("archive"), on: { click: () => toggleArchive(ledger.id) } })
+        el("button", { className: "btn ghost", text: ledger.archived ? t("unarchive") : t("archive"), on: { click: () => toggleArchive(ledger.id) } }),
+        ledger.archived ? el("button", { className: "btn danger", text: t("deleteLedger"), on: { click: () => deleteArchivedLedger(ledger.id) } }) : null
       ])
     ]),
     el("div", { className: "summary-grid" }, [
@@ -901,6 +916,27 @@ async function toggleArchive(ledgerId) {
   ledger.archived = !ledger.archived;
   ledger.updatedAt = new Date().toISOString();
   await saveDataAndRender();
+}
+
+async function deleteArchivedLedger(ledgerId) {
+  const ledger = getLedger(ledgerId);
+  if (!ledger || !ledger.archived) return;
+
+  const recordCount = Array.isArray(ledger.records) ? ledger.records.length : 0;
+  if (!confirm(t("confirmDeleteArchivedLedger", { name: ledger.name || ledgerId, count: recordCount }))) return;
+
+  ledger.records = [];
+  state.data.ledgers = state.data.ledgers.filter((item) => item.id !== ledgerId);
+  clearLastOpenedLedgerId(ledgerId);
+
+  if (state.selectedLedgerId === ledgerId) {
+    state.view = "dashboard";
+    state.selectedLedgerId = null;
+  }
+
+  await saveDataAndRender(false);
+  renderShell();
+  renderApp();
 }
 
 async function deleteRecord(ledgerId, recordId) {
