@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Sync Spend v0.6.8",
-  "short_name": "Spend v0.6.8",
+  "name": "Sync Spend v0.6.9",
+  "short_name": "Spend v0.6.9",
   "description": "Shared expense ledger PWA backed by GitHub JSON and Cloudflare.",
   "start_url": "./?source=pwa",
   "scope": "./",

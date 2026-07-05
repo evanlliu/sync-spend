@@ -109,6 +109,11 @@ const dict = {
     splitAmountTooHigh: "分摊金额合计不能大于本次消费折合人民币金额。",
     deletePhoto: "删除图片",
     viewPhoto: "查看图片",
+    paidBy: "付款人",
+    paidAmount: "支付",
+    settlementTotal: "共 {count} 笔需要结算，合计 {amount}",
+    settlementInstruction: "{from} 需要支付 {to} {amount}",
+    settlementClear: "当前账本已结清，无需转账。",
     close: "关闭"
   },
   "en-US": {
@@ -216,6 +221,11 @@ const dict = {
     splitAmountTooHigh: "The allocated split amount cannot exceed the CNY equivalent of this expense.",
     deletePhoto: "Delete photo",
     viewPhoto: "View photo",
+    paidBy: "Payer",
+    paidAmount: "paid",
+    settlementTotal: "{count} settlement(s), total {amount}",
+    settlementInstruction: "{from} should pay {to} {amount}",
+    settlementClear: "This ledger is settled. No transfer is needed.",
     close: "Close"
   }
 };

@@ -397,19 +397,42 @@ function renderBalances(summary) {
 
 function renderSettlements(summary) {
   const nameMap = Object.fromEntries(summary.participants.map((p) => [p.id, localizedName(p.name, p.id)]));
-  return el("article", { className: "glass card" }, [
+  const totalSettlement = roundMoney(summary.settlements.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+
+  return el("article", { className: "glass card settlement-card" }, [
     el("h2", { text: t("settlement") }),
     summary.settlements.length
-      ? el("div", { className: "settlement-list" }, summary.settlements.map((item) => el("div", { className: "settlement-item" }, [
-        el("span", { text: `${nameMap[item.fromId] || item.fromId} → ${nameMap[item.toId] || item.toId}` }),
-        el("strong", { text: money(item.amount, "CNY") })
-      ])))
-      : el("p", { className: "muted", text: t("noSettlement") })
+      ? el("div", { className: "settlement-overview" }, [
+        el("span", { text: t("settlementTotal", { count: summary.settlements.length, amount: money(totalSettlement, "CNY") }) }),
+        el("strong", { text: money(totalSettlement, "CNY") })
+      ])
+      : el("div", { className: "settlement-overview is-clear" }, [
+        el("span", { text: t("settlementClear") }),
+        el("strong", { text: "✓" })
+      ]),
+    summary.settlements.length
+      ? el("div", { className: "settlement-list enhanced" }, summary.settlements.map((item) => {
+        const from = nameMap[item.fromId] || item.fromId;
+        const to = nameMap[item.toId] || item.toId;
+        return el("div", { className: "settlement-item enhanced" }, [
+          el("div", { className: "settlement-route" }, [
+            el("span", { className: "person-chip debtor", text: from }),
+            el("span", { className: "route-arrow", text: "→" }),
+            el("span", { className: "person-chip creditor", text: to })
+          ]),
+          el("div", { className: "settlement-amount" }, [
+            el("small", { text: t("payAmount") }),
+            el("strong", { text: money(item.amount, "CNY") })
+          ]),
+          el("p", { className: "settlement-readable", text: t("settlementInstruction", { from, to, amount: money(item.amount, "CNY") }) })
+        ]);
+      }))
+      : null
   ]);
 }
 
 function renderRecords(ledger, records) {
-  const card = el("article", { className: "glass card" }, [
+  const card = el("article", { className: "glass card records-card" }, [
     el("div", { className: "card-head" }, [el("h2", { text: t("records") }), el("span", { className: "pill", text: String(records.length) })])
   ]);
 
@@ -420,23 +443,38 @@ function renderRecords(ledger, records) {
 
   const list = el("div", { className: "record-list" });
   for (const record of records.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)))) {
-    const payer = state.config.consumers.find((item) => item.id === record.consumerId);
-    const shareMap = recordShareMap(record, ledger.participantIds);
-    const shareText = Object.entries(shareMap)
-      .map(([id, value]) => `${consumerName(id)} ${money(value, "CNY")}`)
-      .join(" / ");
+    const payerName = consumerName(record.consumerId);
+    const participantNames = sanitizeSplitParticipants(record, ledger.participantIds).map(consumerName).join(" / ");
+    const shareEntries = Object.entries(recordShareMap(record, ledger.participantIds));
 
-    list.append(el("div", { className: "record-item liquid-card" }, [
+    list.append(el("div", { className: "record-item liquid-card record-item-enhanced" }, [
       record.photo ? photoThumb(record.photo) : el("div", { className: "record-photo placeholder", text: "📷" }),
-      el("div", { className: "record-body" }, [
-        el("div", { className: "record-title" }, [
-          el("strong", { text: money(record.amount, record.currency) }),
-          el("span", { text: `${t("cnyValue")}: ${money(record.amountCny, "CNY")}` })
+      el("div", { className: "record-body record-body-enhanced" }, [
+        el("div", { className: "record-primary-line" }, [
+          el("div", { className: "record-story" }, [
+            el("span", { className: "record-action-badge", text: t("paidBy") }),
+            el("strong", { className: "record-payer", text: payerName }),
+            el("span", { className: "record-action-text", text: t("paidAmount") }),
+            el("strong", { className: "record-original-amount", text: money(record.amount, record.currency) })
+          ]),
+          el("div", { className: "record-cny-highlight" }, [
+            el("small", { text: t("cnyValue") }),
+            el("strong", { text: money(record.amountCny, "CNY") })
+          ])
         ]),
-        el("p", { className: "muted", text: `${formatDate(record.date)} · ${localizedName(payer?.name, record.consumerId)} · ${t("rate")}: ${formatRate(record.rateToCny) || "-"}` }),
-        el("p", { className: "muted", text: `${t("splitMethod")}: ${record.splitMode === "amount" ? t("splitByAmount") : t("splitEqual")}` }),
-        shareText ? el("p", { className: "record-shares", text: shareText }) : null,
-        record.note ? el("p", { text: record.note }) : null
+        el("div", { className: "record-meta-grid" }, [
+          recordMetaChip(t("date"), formatDate(record.date)),
+          recordMetaChip(t("rate"), formatRate(record.rateToCny) || "-"),
+          recordMetaChip(t("splitMethod"), record.splitMode === "amount" ? t("splitByAmount") : t("splitEqual")),
+          recordMetaChip(t("splitParticipants"), participantNames || "-")
+        ]),
+        shareEntries.length ? el("div", { className: "record-share-grid" }, shareEntries.map(([id, value]) => (
+          el("span", { className: "record-share-chip" }, [
+            el("small", { text: consumerName(id) }),
+            el("strong", { text: money(value, "CNY") })
+          ])
+        ))) : null,
+        record.note ? el("p", { className: "record-note", text: record.note }) : null
       ]),
       el("div", { className: "row-actions vertical" }, [
         el("button", { className: "btn ghost small", text: t("edit"), on: { click: () => showExpenseModal(ledger, record) } }),
@@ -446,6 +484,13 @@ function renderRecords(ledger, records) {
   }
   card.append(list);
   return card;
+}
+
+function recordMetaChip(label, value) {
+  return el("span", { className: "record-meta-chip" }, [
+    el("small", { text: label }),
+    el("strong", { text: value })
+  ]);
 }
 
 function photoThumb(src) {
