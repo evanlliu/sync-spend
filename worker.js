@@ -17,7 +17,7 @@
  * V0.6.2: 页面刷新后默认打开上一次打开的账本。
  * V0.6.6: 版本号从 config.json 移除，避免覆盖用户自定义配置。
  * V0.6.8: 新增/编辑弹窗标题栏和底部保存区固定，表单内容独立滚动。
- * V0.6.9: 隐藏 PC 浏览器滚动条，优化记账记录高亮和结算建议展示。
+ * V0.7.0: 增加记录创建/修改历史、账本结算记录和新的页面信息布局。
  */
 
 const JSON_HEADERS = {
@@ -46,7 +46,7 @@ async function handleApiRequest(context) {
       return json({
         ok: true,
         app: "sync-spend",
-        version: "0.6.9",
+        version: "0.7.0",
         mode: "single-file-worker",
         hasPassword: Boolean(env.APP_PASSWORD),
         hasGithubToken: Boolean(env.GH_TOKEN),

@@ -1,5 +1,9 @@
 import { roundMoney } from "./currency.js";
 
+export function isSettlementRecord(record) {
+  return record?.type === "settlement";
+}
+
 export function ledgerSummary(ledger, config) {
   const participantIds = Array.isArray(ledger.participantIds) ? ledger.participantIds : [];
   const consumers = config.consumers || [];
@@ -9,12 +13,33 @@ export function ledgerSummary(ledger, config) {
 
   const paidBy = Object.fromEntries(participantIds.map((id) => [id, 0]));
   const shareBy = Object.fromEntries(participantIds.map((id) => [id, 0]));
+  const settlementPaidBy = Object.fromEntries(participantIds.map((id) => [id, 0]));
+  const settlementReceivedBy = Object.fromEntries(participantIds.map((id) => [id, 0]));
   const records = Array.isArray(ledger.records) ? ledger.records.filter((record) => !record.deleted) : [];
+  const expenseRecords = records.filter((record) => !isSettlementRecord(record));
+  const settlementRecords = records.filter(isSettlementRecord);
   const totalByCurrency = {};
   let totalCny = 0;
   let allocatedCny = 0;
+  let settledCny = 0;
 
   for (const record of records) {
+    if (isSettlementRecord(record)) {
+      const amount = roundMoney(record.amountCny || record.amount || 0);
+      const fromId = record.fromConsumerId;
+      const toId = record.toConsumerId;
+      if (fromId) {
+        if (!settlementPaidBy[fromId]) settlementPaidBy[fromId] = 0;
+        settlementPaidBy[fromId] = roundMoney(settlementPaidBy[fromId] + amount);
+      }
+      if (toId) {
+        if (!settlementReceivedBy[toId]) settlementReceivedBy[toId] = 0;
+        settlementReceivedBy[toId] = roundMoney(settlementReceivedBy[toId] + amount);
+      }
+      settledCny = roundMoney(settledCny + amount);
+      continue;
+    }
+
     const originalCurrency = record.currency || "CNY";
     const originalAmount = roundMoney(record.amount || 0);
     totalByCurrency[originalCurrency] = roundMoney((totalByCurrency[originalCurrency] || 0) + originalAmount);
@@ -37,15 +62,31 @@ export function ledgerSummary(ledger, config) {
   const balances = participants.map((person) => {
     const paid = roundMoney(paidBy[person.id] || 0);
     const share = roundMoney(shareBy[person.id] || 0);
-    const balance = roundMoney(paid - share);
-    return { consumerId: person.id, consumer: person, paid, share, balance };
+    const settlementPaid = roundMoney(settlementPaidBy[person.id] || 0);
+    const settlementReceived = roundMoney(settlementReceivedBy[person.id] || 0);
+    const beforeSettlementBalance = roundMoney(paid - share);
+    const balance = roundMoney(beforeSettlementBalance + settlementPaid - settlementReceived);
+    return {
+      consumerId: person.id,
+      consumer: person,
+      paid,
+      share,
+      settlementPaid,
+      settlementReceived,
+      settledNet: roundMoney(settlementPaid - settlementReceived),
+      beforeSettlementBalance,
+      balance
+    };
   });
 
   return {
     participants,
     records,
+    expenseRecords,
+    settlementRecords,
     totalCny,
     totalByCurrency,
+    settledCny,
     allocatedCny,
     unallocatedCny: roundMoney(totalCny - allocatedCny),
     perPerson,
@@ -55,6 +96,8 @@ export function ledgerSummary(ledger, config) {
 }
 
 export function recordShareMap(record, ledgerParticipantIds = []) {
+  if (isSettlementRecord(record)) return {};
+
   const total = roundMoney(record.amountCny || 0);
   if (total <= 0) return {};
 

@@ -1,5 +1,5 @@
 import { ApiClient, getSavedPassword, loadClientConfig } from "./api.js";
-import { equalShareMap, ledgerSummary, recordShareMap, sanitizeSplitParticipants } from "./calculator.js";
+import { equalShareMap, isSettlementRecord, ledgerSummary, recordShareMap, sanitizeSplitParticipants } from "./calculator.js";
 import { convertWithRate, formatRate, getToCnyRate, normalizeRate, roundMoney } from "./currency.js";
 import { getLanguage, LANGS, localizedName, setLanguage, t } from "./i18n.js";
 import { activeConsumers, getLedger, loadCache, setBootstrap, state, updateCache } from "./store.js";
@@ -339,6 +339,7 @@ function renderLedgerDetail(ledger) {
         el("p", { className: "muted", text: `${t("createdAt")}: ${formatDateTime(ledger.createdAt)}` })
       ]),
       el("div", { className: "hero-actions" }, [
+        summary.settlements.length ? el("button", { className: "btn settle", text: t("settleNow"), on: { click: () => settleLedger(ledger, summary) } }) : null,
         el("button", { className: "btn primary", text: t("addExpense"), on: { click: () => showExpenseModal(ledger) } }),
         el("button", { className: "btn ghost", text: t("edit"), on: { click: () => showLedgerModal(ledger) } }),
         el("button", { className: "btn ghost", text: ledger.archived ? t("unarchive") : t("archive"), on: { click: () => toggleArchive(ledger.id) } }),
@@ -354,7 +355,7 @@ function renderLedgerDetail(ledger) {
         summary.unallocatedCny > 0.01 ? el("p", { className: "hint warn", text: `${t("unallocated")}: ${money(summary.unallocatedCny, "CNY")}` }) : null
       ]),
       renderBalances(summary),
-      renderSettlements(summary)
+      renderSettlements(summary, ledger)
     ]),
     renderRecords(ledger, summary.records)
   ]);
@@ -385,22 +386,33 @@ function renderBalances(summary) {
     el("div", { className: "balance-values" }, [
       el("span", {}, [el("small", { text: t("paid") }), el("b", { text: money(item.paid, "CNY") })]),
       el("span", {}, [el("small", { text: t("shareAmount") }), el("b", { text: money(item.share, "CNY") })]),
+      el("span", {}, [el("small", { text: t("settledPaid") }), el("b", { className: "settlement-paid", text: money(item.settlementPaid, "CNY") })]),
+      el("span", {}, [el("small", { text: t("settledReceived") }), el("b", { className: "settlement-received", text: money(item.settlementReceived, "CNY") })]),
       el("span", {}, [el("small", { text: t("net") }), el("b", { className: item.balance >= 0 ? "pos" : "neg", text: money(item.balance, "CNY") })])
     ])
   ]));
 
   return el("article", { className: "glass card balance-card" }, [
     el("h2", { text: t("balance") }),
+    el("p", { className: "muted balance-caption", text: t("balanceAfterSettlement") }),
     el("div", { className: "balance-list" }, rows)
   ]);
 }
 
-function renderSettlements(summary) {
+function renderSettlements(summary, ledger = null) {
   const nameMap = Object.fromEntries(summary.participants.map((p) => [p.id, localizedName(p.name, p.id)]));
   const totalSettlement = roundMoney(summary.settlements.reduce((sum, item) => sum + Number(item.amount || 0), 0));
 
   return el("article", { className: "glass card settlement-card" }, [
-    el("h2", { text: t("settlement") }),
+    el("div", { className: "settlement-card-head" }, [
+      el("h2", { text: t("settlement") }),
+      summary.settlements.length && ledger
+        ? el("button", { className: "btn settle small", text: t("settleNow"), on: { click: () => settleLedger(ledger, summary) } })
+        : null
+    ]),
+    summary.settledCny > 0
+      ? el("p", { className: "muted settlement-done-text", text: `${t("settledTotal")}: ${money(summary.settledCny, "CNY")}` })
+      : null,
     summary.settlements.length
       ? el("div", { className: "settlement-overview" }, [
         el("span", { text: t("settlementTotal", { count: summary.settlements.length, amount: money(totalSettlement, "CNY") }) }),
@@ -441,49 +453,134 @@ function renderRecords(ledger, records) {
     return card;
   }
 
-  const list = el("div", { className: "record-list" });
-  for (const record of records.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)))) {
-    const payerName = consumerName(record.consumerId);
-    const participantNames = sanitizeSplitParticipants(record, ledger.participantIds).map(consumerName).join(" / ");
-    const shareEntries = Object.entries(recordShareMap(record, ledger.participantIds));
-
-    list.append(el("div", { className: "record-item liquid-card record-item-enhanced" }, [
-      record.photo ? photoThumb(record.photo) : el("div", { className: "record-photo placeholder", text: "📷" }),
-      el("div", { className: "record-body record-body-enhanced" }, [
-        el("div", { className: "record-primary-line" }, [
-          el("div", { className: "record-story" }, [
-            el("span", { className: "record-action-badge", text: t("paidBy") }),
-            el("strong", { className: "record-payer", text: payerName }),
-            el("span", { className: "record-action-text", text: t("paidAmount") }),
-            el("strong", { className: "record-original-amount", text: money(record.amount, record.currency) })
-          ]),
-          el("div", { className: "record-cny-highlight" }, [
-            el("small", { text: t("cnyValue") }),
-            el("strong", { text: money(record.amountCny, "CNY") })
-          ])
-        ]),
-        el("div", { className: "record-meta-grid" }, [
-          recordMetaChip(t("date"), formatDate(record.date)),
-          recordMetaChip(t("rate"), formatRate(record.rateToCny) || "-"),
-          recordMetaChip(t("splitMethod"), record.splitMode === "amount" ? t("splitByAmount") : t("splitEqual")),
-          recordMetaChip(t("splitParticipants"), participantNames || "-")
-        ]),
-        shareEntries.length ? el("div", { className: "record-share-grid" }, shareEntries.map(([id, value]) => (
-          el("span", { className: "record-share-chip" }, [
-            el("small", { text: consumerName(id) }),
-            el("strong", { text: money(value, "CNY") })
-          ])
-        ))) : null,
-        record.note ? el("p", { className: "record-note", text: record.note }) : null
-      ]),
-      el("div", { className: "row-actions vertical" }, [
-        el("button", { className: "btn ghost small", text: t("edit"), on: { click: () => showExpenseModal(ledger, record) } }),
-        el("button", { className: "btn danger small", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
-      ])
-    ]));
+  const list = el("div", { className: "record-list timeline-list" });
+  const sorted = records.slice().sort((a, b) => recordSortTime(b).localeCompare(recordSortTime(a)));
+  for (const record of sorted) {
+    list.append(isSettlementRecord(record) ? renderSettlementRecord(ledger, record) : renderExpenseRecord(ledger, record));
   }
   card.append(list);
   return card;
+}
+
+function renderExpenseRecord(ledger, record) {
+  const payerName = consumerName(record.consumerId);
+  const participantNames = sanitizeSplitParticipants(record, ledger.participantIds).map(consumerName).join(" / ");
+  const shareEntries = Object.entries(recordShareMap(record, ledger.participantIds));
+
+  return el("div", { className: "record-item liquid-card record-item-enhanced expense-record" }, [
+    record.photo ? photoThumb(record.photo) : el("div", { className: "record-photo placeholder", text: "📷" }),
+    el("div", { className: "record-body record-body-enhanced" }, [
+      el("div", { className: "record-primary-line" }, [
+        el("div", { className: "record-story" }, [
+          el("span", { className: "record-action-badge expense", text: t("expense") }),
+          el("strong", { className: "record-payer", text: payerName }),
+          el("span", { className: "record-action-text", text: t("paidAmount") }),
+          el("strong", { className: "record-original-amount", text: money(record.amount, record.currency) })
+        ]),
+        el("div", { className: "record-cny-highlight" }, [
+          el("small", { text: t("cnyValue") }),
+          el("strong", { text: money(record.amountCny, "CNY") })
+        ])
+      ]),
+      el("div", { className: "record-meta-grid" }, [
+        recordMetaChip(t("date"), formatDate(record.date)),
+        recordMetaChip(t("rate"), formatRate(record.rateToCny) || "-"),
+        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt)),
+        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt)),
+        recordMetaChip(t("splitMethod"), record.splitMode === "amount" ? t("splitByAmount") : t("splitEqual")),
+        recordMetaChip(t("splitParticipants"), participantNames || "-")
+      ]),
+      shareEntries.length ? el("div", { className: "record-share-grid" }, shareEntries.map(([id, value]) => (
+        el("span", { className: "record-share-chip" }, [
+          el("small", { text: consumerName(id) }),
+          el("strong", { text: money(value, "CNY") })
+        ])
+      ))) : null,
+      record.note ? el("p", { className: "record-note", text: record.note }) : null,
+      renderRecordHistory(record)
+    ]),
+    el("div", { className: "row-actions vertical" }, [
+      el("button", { className: "btn ghost small", text: t("edit"), on: { click: () => showExpenseModal(ledger, record) } }),
+      el("button", { className: "btn danger small", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
+    ])
+  ]);
+}
+
+function renderSettlementRecord(ledger, record) {
+  const from = consumerName(record.fromConsumerId);
+  const to = consumerName(record.toConsumerId);
+  const amount = roundMoney(record.amountCny || record.amount || 0);
+
+  return el("div", { className: "record-item liquid-card record-item-enhanced settlement-record" }, [
+    el("div", { className: "record-photo settlement-icon", text: "✓" }),
+    el("div", { className: "record-body record-body-enhanced" }, [
+      el("div", { className: "record-primary-line" }, [
+        el("div", { className: "record-story settlement-story" }, [
+          el("span", { className: "record-action-badge settlement", text: t("settlementRecord") }),
+          el("strong", { className: "record-payer debtor-text", text: from }),
+          el("span", { className: "route-arrow", text: "→" }),
+          el("strong", { className: "record-payer creditor-text", text: to })
+        ]),
+        el("div", { className: "record-cny-highlight settlement-highlight" }, [
+          el("small", { text: t("paidSettlement") }),
+          el("strong", { text: money(amount, "CNY") })
+        ])
+      ]),
+      el("p", { className: "settlement-record-readable", text: t("settlementRecordText", { from, to, amount: money(amount, "CNY") }) }),
+      el("div", { className: "record-meta-grid" }, [
+        recordMetaChip(t("date"), formatDate(record.date)),
+        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt)),
+        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt)),
+        recordMetaChip(t("recordType"), t("settlementRecord"))
+      ]),
+      record.note ? el("p", { className: "record-note", text: record.note }) : null,
+      renderRecordHistory(record)
+    ]),
+    el("div", { className: "row-actions vertical" }, [
+      el("button", { className: "btn danger small", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
+    ])
+  ]);
+}
+
+function recordSortTime(record) {
+  return String(record.createdAt || record.updatedAt || (record.date ? `${record.date}T00:00:00.000Z` : ""));
+}
+
+function renderRecordHistory(record) {
+  const history = Array.isArray(record.history) ? record.history : [];
+  const rows = [];
+  const hasCreatedHistory = history.some((item) => item.action === "created" || item.type === "created");
+  const hasUpdatedHistory = history.some((item) => item.action === "updated" || item.type === "updated");
+  if (record.createdAt && !hasCreatedHistory) rows.push({ at: record.createdAt, action: "created" });
+  if (record.updatedAt && record.updatedAt !== record.createdAt && !hasUpdatedHistory) rows.push({ at: record.updatedAt, action: "updated" });
+  for (const item of history) rows.push(item);
+
+  const deduped = [];
+  const seen = new Set();
+  for (const item of rows) {
+    const key = `${item.action || item.type || "history"}|${item.at || ""}|${item.summary || ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+
+  if (!deduped.length) return null;
+  return el("details", { className: "record-history" }, [
+    el("summary", { text: `${t("history")}${deduped.length ? ` · ${deduped.length}` : ""}` }),
+    el("div", { className: "history-list" }, deduped.slice().reverse().map((item) => el("div", { className: "history-row" }, [
+      el("span", { className: "history-dot" }),
+      el("div", {}, [
+        el("strong", { text: historyActionLabel(item.action || item.type) }),
+        el("small", { text: formatDateTime(item.at) }),
+        item.summary ? el("p", { text: item.summary }) : null
+      ])
+    ])))
+  ]);
+}
+
+function historyActionLabel(action) {
+  const key = `history_${action || "updated"}`;
+  return t(key);
 }
 
 function recordMetaChip(label, value) {
@@ -603,6 +700,23 @@ function savePreferredCurrency(currency) {
   const code = String(currency || "").trim();
   const exists = (state.config.currencies || []).some((item) => item.code === code);
   if (exists) localStorage.setItem(LAST_CURRENCY_KEY, code);
+}
+
+function appendRecordHistory(record, action, summary = "", at = new Date().toISOString()) {
+  record.history = Array.isArray(record.history) ? record.history : [];
+  record.history.push({ action, at, summary });
+}
+
+function expenseHistorySummary(record) {
+  if (!record) return "";
+  if (isSettlementRecord(record)) {
+    return t("settlementRecordText", {
+      from: consumerName(record.fromConsumerId),
+      to: consumerName(record.toConsumerId),
+      amount: money(record.amountCny || record.amount || 0, "CNY")
+    });
+  }
+  return `${consumerName(record.consumerId)} ${money(record.amount, record.currency)} / ${money(record.amountCny, "CNY")}`;
 }
 
 function showExpenseModal(ledger, record = null) {
@@ -850,8 +964,10 @@ function showExpenseModal(ledger, record = null) {
       }
     }
 
+    const now = new Date().toISOString();
     const next = {
       ...draft,
+      type: "expense",
       date: dateInput.value,
       consumerId: consumerSelect.value,
       amount: Number(amountInput.value),
@@ -863,11 +979,16 @@ function showExpenseModal(ledger, record = null) {
       splitParticipantIds,
       splitAmountsCny,
       note: noteInput.value.trim(),
-      updatedAt: new Date().toISOString()
+      createdAt: draft.createdAt || now,
+      updatedAt: now,
+      history: Array.isArray(draft.history) ? draft.history.slice() : []
     };
 
-    if (editing) Object.assign(record, next);
-    else {
+    if (editing) {
+      appendRecordHistory(next, "updated", `${t("before")}: ${expenseHistorySummary(record)} → ${t("after")}: ${expenseHistorySummary(next)}`, now);
+      Object.assign(record, next);
+    } else {
+      appendRecordHistory(next, "created", expenseHistorySummary(next), now);
       savePreferredCurrency(next.currency);
       ledger.records = Array.isArray(ledger.records) ? ledger.records : [];
       ledger.records.unshift(next);
@@ -963,6 +1084,55 @@ async function toggleArchive(ledgerId) {
   await saveDataAndRender();
 }
 
+async function settleLedger(ledger, summary = null) {
+  const currentSummary = summary || ledgerSummary(ledger, state.config);
+  const settlements = currentSummary.settlements || [];
+  if (!settlements.length) {
+    toast(t("settlementClear"), "success");
+    return;
+  }
+
+  const total = roundMoney(settlements.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+  const lines = settlements.map((item) => t("settlementRecordText", {
+    from: consumerName(item.fromId),
+    to: consumerName(item.toId),
+    amount: money(item.amount, "CNY")
+  }));
+
+  if (!confirm(`${t("confirmSettle", { count: settlements.length, amount: money(total, "CNY") })}\n\n${lines.join("\n")}`)) return;
+
+  const now = new Date().toISOString();
+  const batchId = uid("settle_batch");
+  ledger.records = Array.isArray(ledger.records) ? ledger.records : [];
+
+  const records = settlements.map((item) => {
+    const record = {
+      id: uid("settlement"),
+      type: "settlement",
+      date: todayInputValue(),
+      fromConsumerId: item.fromId,
+      toConsumerId: item.toId,
+      amount: roundMoney(item.amount),
+      currency: "CNY",
+      amountCny: roundMoney(item.amount),
+      rateToCny: 1,
+      rateSource: "settlement",
+      settlementBatchId: batchId,
+      note: "",
+      createdAt: now,
+      updatedAt: now,
+      history: []
+    };
+    appendRecordHistory(record, "created", expenseHistorySummary(record), now);
+    return record;
+  });
+
+  ledger.records.unshift(...records);
+  ledger.updatedAt = now;
+  await saveDataAndRender();
+  toast(t("settlementSaved", { count: records.length }), "success");
+}
+
 async function deleteArchivedLedger(ledgerId) {
   const ledger = getLedger(ledgerId);
   if (!ledger || !ledger.archived) return;
@@ -989,8 +1159,10 @@ async function deleteRecord(ledgerId, recordId) {
   const ledger = getLedger(ledgerId);
   const record = ledger?.records?.find((item) => item.id === recordId);
   if (!record) return;
+  const now = new Date().toISOString();
   record.deleted = true;
-  record.updatedAt = new Date().toISOString();
+  record.updatedAt = now;
+  appendRecordHistory(record, "deleted", expenseHistorySummary(record), now);
   await saveDataAndRender();
 }
 

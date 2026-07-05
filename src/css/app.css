@@ -1208,3 +1208,254 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
     justify-content: space-between;
   }
 }
+
+/* V0.7.0: 结算闭环、记录历史和更直观的 PC / 移动端信息布局。 */
+.btn.settle {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.36);
+  background: linear-gradient(135deg, #0d9b64, #21c58a);
+  box-shadow: 0 16px 34px rgba(13, 155, 100, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.44);
+}
+
+.summary-grid {
+  grid-template-columns: minmax(230px, 0.8fr) minmax(470px, 1.45fr) minmax(300px, 1fr);
+}
+
+.total-card,
+.balance-card,
+.settlement-card,
+.records-card {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.34)),
+    rgba(255, 255, 255, 0.36);
+}
+
+.balance-caption,
+.settlement-done-text {
+  margin: -4px 0 12px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.balance-row {
+  grid-template-columns: minmax(70px, 0.58fr) minmax(0, 2.6fr);
+  padding: 12px 0;
+}
+
+.balance-values {
+  grid-template-columns: repeat(5, minmax(78px, 1fr));
+}
+
+.balance-values span {
+  min-height: 54px;
+  border-radius: 16px;
+  padding: 8px 9px;
+  background: rgba(255, 255, 255, 0.32);
+  border: 1px solid rgba(23, 32, 51, 0.06);
+}
+
+.balance-values b.settlement-paid {
+  color: var(--success);
+}
+
+.balance-values b.settlement-received {
+  color: var(--primary);
+}
+
+.settlement-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.settlement-card-head h2 {
+  margin: 0;
+}
+
+.timeline-list {
+  position: relative;
+}
+
+.record-item-enhanced {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+}
+
+.record-item-enhanced::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 18px;
+  bottom: 18px;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--primary), var(--primary-2));
+}
+
+.settlement-record::before {
+  background: linear-gradient(180deg, #0d9b64, #21c58a);
+}
+
+.record-action-badge.expense {
+  color: var(--primary);
+  background: rgba(47, 101, 255, 0.1);
+}
+
+.record-action-badge.settlement {
+  color: var(--success);
+  background: rgba(13, 155, 100, 0.1);
+}
+
+.record-photo.settlement-icon {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 34px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #0d9b64, #21c58a);
+  box-shadow: 0 18px 34px rgba(13, 155, 100, 0.22);
+}
+
+.settlement-highlight {
+  background: linear-gradient(135deg, #0d9b64, #21c58a);
+  box-shadow: 0 16px 32px rgba(13, 155, 100, 0.22);
+}
+
+.debtor-text {
+  color: var(--danger);
+}
+
+.creditor-text {
+  color: var(--success);
+}
+
+.settlement-record-readable {
+  margin: 0;
+  border-radius: 18px;
+  padding: 10px 12px;
+  color: #075f3f;
+  font-weight: 800;
+  background: rgba(13, 155, 100, 0.1);
+  border: 1px solid rgba(13, 155, 100, 0.12);
+}
+
+.record-meta-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.record-history {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(23, 32, 51, 0.07);
+}
+
+.record-history summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  list-style: none;
+}
+
+.record-history summary::-webkit-details-marker {
+  display: none;
+}
+
+.record-history summary::after {
+  content: "⌄";
+  float: right;
+  color: var(--primary);
+}
+
+.record-history[open] summary::after {
+  content: "⌃";
+}
+
+.history-list {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.history-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 0 0 4px rgba(47, 101, 255, 0.1);
+}
+
+.history-row strong {
+  display: block;
+  font-size: 12px;
+}
+
+.history-row small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.history-row p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1050px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-row {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .record-meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settlement-card-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settlement-card-head .btn {
+    width: 100%;
+  }
+
+  .record-photo.settlement-icon {
+    width: 100%;
+    height: 120px;
+  }
+}
+
+@media (max-width: 420px) {
+  .balance-values,
+  .record-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
