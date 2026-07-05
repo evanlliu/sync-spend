@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-05T23:20:45.701Z",
+  "updatedAt": "2026-07-05T23:21:00.768Z",
   "ledgers": [
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
@@ -15,9 +15,9 @@
           "id": "record_mr8ezktf_11cjvlg150sk5f",
           "date": "2026-07-05",
           "consumerId": "consumer_evan",
-          "amount": 199,
+          "amount": 100,
           "currency": "CNY",
-          "amountCny": 199,
+          "amountCny": 100,
           "rateToCny": 1,
           "rateSource": "live",
           "splitMode": "equal",
@@ -30,12 +30,17 @@
           "photo": null,
           "createdAt": "2026-07-05T23:20:37.155Z",
           "type": "expense",
-          "updatedAt": "2026-07-05T23:20:45.244Z",
+          "updatedAt": "2026-07-05T23:21:00.365Z",
           "history": [
             {
               "action": "created",
               "at": "2026-07-05T23:20:45.244Z",
               "summary": "刘彬 ¥199.00 / ¥199.00"
+            },
+            {
+              "action": "updated",
+              "at": "2026-07-05T23:21:00.365Z",
+              "summary": "修改前: 刘彬 ¥199.00 / ¥199.00 → 修改后: 刘彬 ¥100.00 / ¥100.00"
             }
           ]
         },
@@ -124,7 +129,7 @@
         }
       ],
       "createdAt": "2026-07-05T21:36:20.135Z",
-      "updatedAt": "2026-07-05T23:20:45.244Z"
+      "updatedAt": "2026-07-05T23:21:00.365Z"
     }
   ]
 }
