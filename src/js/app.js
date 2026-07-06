@@ -455,11 +455,35 @@ function renderRecords(ledger, records) {
 
   const list = el("div", { className: "record-list timeline-list" });
   const sorted = records.slice().sort((a, b) => recordSortTime(b).localeCompare(recordSortTime(a)));
+  let lastDateKey = "";
   for (const record of sorted) {
+    const dateKey = recordDateKey(record);
+    if (dateKey && dateKey !== lastDateKey) {
+      list.append(el("div", { className: "mobile-record-date", text: formatMobileRecordDate(dateKey) }));
+      lastDateKey = dateKey;
+    }
     list.append(isSettlementRecord(record) ? renderSettlementRecord(ledger, record) : renderExpenseRecord(ledger, record));
   }
   card.append(list);
   return card;
+}
+
+function recordDateKey(record) {
+  const source = String(record.date || record.createdAt || record.updatedAt || "");
+  return source.slice(0, 10);
+}
+
+function formatMobileRecordDate(dateKey) {
+  if (!dateKey) return "";
+  try {
+    return new Intl.DateTimeFormat(state.lang === "en-US" ? "en-US" : "zh-CN", {
+      month: "long",
+      day: "numeric",
+      weekday: "long"
+    }).format(new Date(`${dateKey}T00:00:00`));
+  } catch {
+    return dateKey;
+  }
 }
 
 function renderExpenseRecord(ledger, record) {
