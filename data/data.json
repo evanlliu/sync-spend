@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-06T00:53:54.994Z",
+  "updatedAt": "2026-07-06T01:05:48.606Z",
   "ledgers": [
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
@@ -11,6 +11,34 @@
         "consumer_mr8b5dem_r23g5l93jxnr"
       ],
       "records": [
+        {
+          "id": "record_mr8iqpc6_1ixfdlz10appy1",
+          "date": "2026-07-06",
+          "consumerId": "consumer_evan",
+          "amount": 100,
+          "currency": "MXN",
+          "amountCny": 38.83,
+          "rateToCny": 0.3883,
+          "rateSource": "live",
+          "splitMode": "equal",
+          "splitParticipantIds": [
+            "consumer_evan",
+            "consumer_mr8b5dem_r23g5l93jxnr"
+          ],
+          "splitAmountsCny": {},
+          "note": "",
+          "photo": null,
+          "createdAt": "2026-07-06T01:05:41.574Z",
+          "type": "expense",
+          "updatedAt": "2026-07-06T01:05:48.079Z",
+          "history": [
+            {
+              "action": "created",
+              "at": "2026-07-06T01:05:48.079Z",
+              "summary": "刘彬 $100.00 / ¥38.83"
+            }
+          ]
+        },
         {
           "id": "record_mr8ezktf_11cjvlg150sk5f",
           "date": "2026-07-05",
@@ -165,7 +193,7 @@
         }
       ],
       "createdAt": "2026-07-05T21:36:20.135Z",
-      "updatedAt": "2026-07-05T23:21:00.365Z"
+      "updatedAt": "2026-07-06T01:05:48.079Z"
     }
   ]
 }
