@@ -1,4 +1,4 @@
-import { ApiClient, getSavedPassword, loadClientConfig } from "./api.js";
+import { ApiClient, loadClientConfig } from "./api.js";
 import { equalShareMap, isSettlementRecord, ledgerSummary, recordShareMap, sanitizeSplitParticipants } from "./calculator.js";
 import { convertWithRate, formatRate, getToCnyRate, normalizeRate, roundMoney } from "./currency.js";
 import { getLanguage, LANGS, localizedName, setLanguage, t } from "./i18n.js";
@@ -32,6 +32,7 @@ init();
 
 async function init() {
   bindNetworkEvents();
+  preventMobilePageZoom();
   registerServiceWorker();
   renderShell();
 
@@ -42,13 +43,6 @@ async function init() {
   if (hasCache) {
     restoreLastOpenedLedger();
     renderApp();
-  }
-
-  const password = getSavedPassword();
-  if (!password) {
-    renderLogin();
-    maybeShowIosInstallTip();
-    return;
   }
 
   await loadRemote();
@@ -78,8 +72,77 @@ function renderShell() {
         languageSelect()
       ])
     ]),
-    el("main", { className: "main", attrs: { id: "main" } })
+    el("main", { className: "main", attrs: { id: "main" } }),
+    renderMobileFloatingActions()
   );
+}
+
+function renderMobileFloatingActions() {
+  if (!state.ready) return el("div", { className: "mobile-fab-dock is-hidden" });
+
+  const ledger = state.view === "ledger" && state.selectedLedgerId ? getLedger(state.selectedLedgerId) : null;
+  const addAction = resolveMobileAddAction(ledger);
+
+  const dock = el("div", { className: "mobile-fab-dock", attrs: { "aria-label": "mobile actions" } }, [
+    addAction ? el("button", {
+      className: `mobile-fab mobile-add-fab ${addAction.className || ""}`,
+      attrs: { type: "button", "aria-label": addAction.label },
+      on: { click: addAction.onClick }
+    }, [
+      el("span", { className: "mobile-add-fab-icon" }),
+      el("span", { className: "mobile-add-fab-plus", text: "+" })
+    ]) : null,
+    el("div", { className: "mobile-more-wrap" }, [
+      el("button", {
+        className: "mobile-fab mobile-more-fab",
+        attrs: { type: "button", "aria-label": t("moreActions"), "aria-expanded": "false" },
+        on: { click: toggleMobileActionMenu }
+      }, [el("span", { text: "•••" })]),
+      el("div", { className: "mobile-action-menu glass" }, [
+        el("button", { className: `mobile-action-item ${state.view === "dashboard" ? "is-active" : ""}`, text: t("dashboard"), on: { click: () => { closeMobileActionMenu(); navigate("dashboard"); } } }),
+        el("button", { className: `mobile-action-item ${state.view === "settings" ? "is-active" : ""}`, text: t("settings"), on: { click: () => { closeMobileActionMenu(); navigate("settings"); } } }),
+        el("label", { className: "mobile-action-lang" }, [
+          el("span", { text: t("language") }),
+          mobileLanguageSelect()
+        ])
+      ])
+    ])
+  ]);
+
+  return dock;
+}
+
+function resolveMobileAddAction(ledger) {
+  if (!state.ready) return null;
+  if (state.view === "ledger" && ledger) {
+    return { label: t("addExpense"), onClick: () => showExpenseModal(ledger) };
+  }
+  if (state.view === "dashboard") {
+    return { label: t("createLedger"), onClick: () => showLedgerModal(), className: "mobile-ledger-add-fab" };
+  }
+  if (state.view === "settings") {
+    return { label: t("addConsumer"), onClick: () => showConsumerModal(), className: "mobile-consumer-add-fab" };
+  }
+  return null;
+}
+
+function mobileLanguageSelect() {
+  const select = languageSelect();
+  select.classList.add("mobile-action-select");
+  return select;
+}
+
+function toggleMobileActionMenu(event) {
+  const wrap = event.currentTarget.closest(".mobile-more-wrap");
+  if (!wrap) return;
+  const open = !wrap.classList.contains("is-open");
+  document.querySelectorAll(".mobile-more-wrap.is-open").forEach((item) => item.classList.remove("is-open"));
+  wrap.classList.toggle("is-open", open);
+  event.currentTarget.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function closeMobileActionMenu() {
+  document.querySelectorAll(".mobile-more-wrap.is-open").forEach((item) => item.classList.remove("is-open"));
 }
 
 function getAppTitle() {
@@ -118,35 +181,6 @@ function languageSelect() {
   return select;
 }
 
-function renderLogin() {
-  renderShell();
-  const main = document.querySelector("#main");
-  clear(main);
-  main.append(
-    el("section", { className: "login-card glass" }, [
-      el("div", { className: "login-icon", text: "¥" }),
-      el("h1", { text: t("loginTitle") }),
-      el("p", { className: "muted", text: t("loginDesc") }),
-      el("form", { className: "form", on: { submit: submitLogin } }, [
-        el("label", { className: "field" }, [
-          el("span", { text: t("password") }),
-          el("input", { attrs: { type: "password", name: "password", autocomplete: "current-password", required: true } })
-        ]),
-        el("button", { className: "btn primary wide", text: t("enter"), attrs: { type: "submit" } })
-      ])
-    ])
-  );
-}
-
-async function submitLogin(event) {
-  event.preventDefault();
-  const form = new FormData(event.currentTarget);
-  const password = String(form.get("password") || "").trim();
-  if (!password) return;
-  api.setPassword(password);
-  await loadRemote();
-}
-
 async function loadRemote() {
   state.loading = true;
   renderLoading();
@@ -157,7 +191,7 @@ async function loadRemote() {
     renderShell();
     renderApp();
   } catch (error) {
-    if (!state.ready) renderLogin();
+    if (!state.ready) renderLoadError(error);
     toast(`${t("loadFailed")}: ${error.message}`, "error");
   } finally {
     state.loading = false;
@@ -171,6 +205,20 @@ function renderLoading() {
   main.append(el("section", { className: "glass center-card" }, [
     el("div", { className: "loader" }),
     el("p", { className: "muted", text: "Loading..." })
+  ]));
+}
+
+function renderLoadError(error) {
+  renderShell();
+  const main = document.querySelector("#main");
+  if (!main) return;
+  clear(main);
+  main.append(el("section", { className: "glass center-card" }, [
+    el("h1", { text: t("loadFailed") }),
+    el("p", { className: "muted", text: error?.message || t("loadFailed") }),
+    el("div", { className: "row-actions" }, [
+      el("button", { className: "btn primary", text: t("refreshData"), on: { click: loadRemote } })
+    ])
   ]));
 }
 
@@ -334,19 +382,18 @@ function renderLedgerDetail(ledger) {
   return el("section", { className: "ledger-detail" }, [
     el("div", { className: "hero glass ledger-hero" }, [
       el("div", { className: "ledger-hero-main" }, [
-        el("button", { className: "btn ghost small", text: `← ${t("back")}`, on: { click: () => navigate("dashboard") } }),
         el("h1", { text: ledger.name }),
         el("p", { className: "muted", text: `${t("createdAt")}: ${formatDateTime(ledger.createdAt)}` })
       ]),
       el("div", { className: "hero-actions" }, [
-        summary.settlements.length ? el("button", { className: "btn settle", text: t("settleNow"), on: { click: () => settleLedger(ledger, summary) } }) : null,
+        el("button", { className: "btn settle", text: t("settleNow"), on: { click: () => showSettlementModal(ledger, summary) } }),
         el("button", { className: "btn primary", text: t("addExpense"), on: { click: () => showExpenseModal(ledger) } }),
         el("button", { className: "btn ghost", text: t("edit"), on: { click: () => showLedgerModal(ledger) } }),
         el("button", { className: "btn ghost", text: ledger.archived ? t("unarchive") : t("archive"), on: { click: () => toggleArchive(ledger.id) } }),
         ledger.archived ? el("button", { className: "btn danger", text: t("deleteLedger"), on: { click: () => deleteArchivedLedger(ledger.id) } }) : null
       ])
     ]),
-    el("div", { className: "summary-grid" }, [
+    el("div", { className: "summary-grid summary-grid-no-settlement" }, [
       el("article", { className: "glass card total-card" }, [
         el("h2", { text: t("total") }),
         el("div", { className: "big-number", text: money(summary.totalCny, "CNY") }),
@@ -354,8 +401,7 @@ function renderLedgerDetail(ledger) {
         el("p", { className: "muted", text: `${t("perPerson")}: ${money(summary.perPerson, "CNY")}` }),
         summary.unallocatedCny > 0.01 ? el("p", { className: "hint warn", text: `${t("unallocated")}: ${money(summary.unallocatedCny, "CNY")}` }) : null
       ]),
-      renderBalances(summary),
-      renderSettlements(summary, ledger)
+      renderBalances(summary)
     ]),
     renderRecords(ledger, summary.records)
   ]);
@@ -455,11 +501,35 @@ function renderRecords(ledger, records) {
 
   const list = el("div", { className: "record-list timeline-list" });
   const sorted = records.slice().sort((a, b) => recordSortTime(b).localeCompare(recordSortTime(a)));
+  let lastDateKey = "";
   for (const record of sorted) {
+    const dateKey = recordDateKey(record);
+    if (dateKey && dateKey !== lastDateKey) {
+      list.append(el("div", { className: "mobile-record-date", text: formatMobileRecordDate(dateKey) }));
+      lastDateKey = dateKey;
+    }
     list.append(isSettlementRecord(record) ? renderSettlementRecord(ledger, record) : renderExpenseRecord(ledger, record));
   }
   card.append(list);
   return card;
+}
+
+function recordDateKey(record) {
+  const source = String(record.date || record.createdAt || record.updatedAt || "");
+  return source.slice(0, 10);
+}
+
+function formatMobileRecordDate(dateKey) {
+  if (!dateKey) return "";
+  try {
+    return new Intl.DateTimeFormat(state.lang === "en-US" ? "en-US" : "zh-CN", {
+      month: "long",
+      day: "numeric",
+      weekday: "long"
+    }).format(new Date(`${dateKey}T00:00:00`));
+  } catch {
+    return dateKey;
+  }
 }
 
 function renderExpenseRecord(ledger, record) {
@@ -467,7 +537,7 @@ function renderExpenseRecord(ledger, record) {
   const participantNames = sanitizeSplitParticipants(record, ledger.participantIds).map(consumerName).join(" / ");
   const shareEntries = Object.entries(recordShareMap(record, ledger.participantIds));
 
-  return el("div", { className: "record-item liquid-card record-item-enhanced expense-record" }, [
+  return recordCard("expense-record", [
     record.photo ? photoThumb(record.photo) : el("div", { className: "record-photo placeholder", text: "📷" }),
     el("div", { className: "record-body record-body-enhanced" }, [
       el("div", { className: "record-primary-line" }, [
@@ -483,12 +553,12 @@ function renderExpenseRecord(ledger, record) {
         ])
       ]),
       el("div", { className: "record-meta-grid" }, [
-        recordMetaChip(t("date"), formatDate(record.date)),
-        recordMetaChip(t("rate"), formatRate(record.rateToCny) || "-"),
-        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt)),
-        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt)),
-        recordMetaChip(t("splitMethod"), record.splitMode === "amount" ? t("splitByAmount") : t("splitEqual")),
-        recordMetaChip(t("splitParticipants"), participantNames || "-")
+        recordMetaChip(t("date"), formatDate(record.date), "date"),
+        recordMetaChip(t("rate"), formatRate(record.rateToCny) || "-", "rate"),
+        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt), "created"),
+        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt), "updated"),
+        recordMetaChip(t("splitMethod"), record.splitMode === "amount" ? t("splitByAmount") : t("splitEqual"), "split-method"),
+        recordMetaChip(t("splitParticipants"), participantNames || "-", "split-participants")
       ]),
       shareEntries.length ? el("div", { className: "record-share-grid" }, shareEntries.map(([id, value]) => (
         el("span", { className: "record-share-chip" }, [
@@ -498,11 +568,10 @@ function renderExpenseRecord(ledger, record) {
       ))) : null,
       record.note ? el("p", { className: "record-note", text: record.note }) : null,
       renderRecordHistory(record)
-    ]),
-    el("div", { className: "row-actions vertical" }, [
-      el("button", { className: "btn ghost small", text: t("edit"), on: { click: () => showExpenseModal(ledger, record) } }),
-      el("button", { className: "btn danger small", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
     ])
+  ], [
+    el("button", { className: "btn ghost small swipe-edit", text: t("edit"), on: { click: () => showExpenseModal(ledger, record) } }),
+    el("button", { className: "btn danger small swipe-delete", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
   ]);
 }
 
@@ -511,7 +580,7 @@ function renderSettlementRecord(ledger, record) {
   const to = consumerName(record.toConsumerId);
   const amount = roundMoney(record.amountCny || record.amount || 0);
 
-  return el("div", { className: "record-item liquid-card record-item-enhanced settlement-record" }, [
+  return recordCard("settlement-record", [
     el("div", { className: "record-photo settlement-icon", text: "✓" }),
     el("div", { className: "record-body record-body-enhanced" }, [
       el("div", { className: "record-primary-line" }, [
@@ -528,18 +597,83 @@ function renderSettlementRecord(ledger, record) {
       ]),
       el("p", { className: "settlement-record-readable", text: t("settlementRecordText", { from, to, amount: money(amount, "CNY") }) }),
       el("div", { className: "record-meta-grid" }, [
-        recordMetaChip(t("date"), formatDate(record.date)),
-        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt)),
-        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt)),
-        recordMetaChip(t("recordType"), t("settlementRecord"))
+        recordMetaChip(t("date"), formatDate(record.date), "date"),
+        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt), "created"),
+        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt), "updated"),
+        recordMetaChip(t("recordType"), t("settlementRecord"), "record-type")
       ]),
       record.note ? el("p", { className: "record-note", text: record.note }) : null,
       renderRecordHistory(record)
-    ]),
-    el("div", { className: "row-actions vertical" }, [
-      el("button", { className: "btn danger small", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
     ])
+  ], [
+    el("button", { className: "btn danger small swipe-delete", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
   ]);
+}
+
+function recordCard(extraClassName, contentChildren, actionChildren) {
+  const node = el("div", { className: `record-item liquid-card record-item-enhanced swipe-record ${extraClassName}` }, [
+    el("div", { className: "record-swipe-content" }, contentChildren),
+    el("div", { className: "row-actions vertical swipe-actions" }, actionChildren)
+  ]);
+  installSwipeReveal(node);
+  return node;
+}
+
+function installSwipeReveal(node) {
+  let startX = 0;
+  let startY = 0;
+  let tracking = false;
+
+  node.addEventListener("pointerdown", (event) => {
+    if (!isMobileViewport()) return;
+    if (event.target.closest("button, a, input, select, textarea, summary, .row-actions")) return;
+    startX = event.clientX;
+    startY = event.clientY;
+    tracking = true;
+  });
+
+  node.addEventListener("pointermove", (event) => {
+    if (!tracking || !isMobileViewport()) return;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    if (Math.abs(dx) < 26 || Math.abs(dx) <= Math.abs(dy)) return;
+    if (dx < 0) {
+      closeOtherSwipeRecords(node);
+      node.classList.add("swiped");
+      document.body.classList.add("mobile-record-actions-open");
+    } else {
+      node.classList.remove("swiped");
+      updateSwipeOpenState();
+    }
+    tracking = false;
+  });
+
+  node.addEventListener("pointerup", (event) => {
+    if (!tracking) return;
+    tracking = false;
+    if (!isMobileViewport()) return;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && node.classList.contains("swiped")) {
+      node.classList.remove("swiped");
+      updateSwipeOpenState();
+    }
+  });
+}
+
+function closeOtherSwipeRecords(current) {
+  document.querySelectorAll(".swipe-record.swiped").forEach((item) => {
+    if (item !== current) item.classList.remove("swiped");
+  });
+  updateSwipeOpenState();
+}
+
+function updateSwipeOpenState() {
+  document.body.classList.toggle("mobile-record-actions-open", Boolean(document.querySelector(".swipe-record.swiped")));
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 760px)").matches;
 }
 
 function recordSortTime(record) {
@@ -583,8 +717,9 @@ function historyActionLabel(action) {
   return t(key);
 }
 
-function recordMetaChip(label, value) {
-  return el("span", { className: "record-meta-chip" }, [
+function recordMetaChip(label, value, key = "") {
+  const safeKey = key ? ` meta-${key}` : "";
+  return el("span", { className: `record-meta-chip${safeKey}` }, [
     el("small", { text: label }),
     el("strong", { text: value })
   ]);
@@ -1049,10 +1184,10 @@ function modalActions() {
   ]);
 }
 
-function openModal(title, body) {
+function openModal(title, body, modalClassName = "") {
   clear(modalRoot);
   modalRoot.append(el("div", { className: "modal-backdrop", on: { click: (event) => { if (event.target.classList.contains("modal-backdrop")) closeModal(); } } }, [
-    el("section", { className: "modal glass" }, [
+    el("section", { className: `modal glass ${modalClassName}`.trim() }, [
       el("div", { className: "modal-head" }, [
         el("h2", { text: title }),
         el("button", { className: "btn ghost small", text: "×", attrs: { type: "button", "aria-label": t("close") }, on: { click: closeModal } })
@@ -1076,6 +1211,86 @@ function showImageViewer(src) {
   document.body.append(root);
 }
 
+function showSettlementModal(ledger, summary = null) {
+  const currentSummary = summary || ledgerSummary(ledger, state.config);
+  const settlements = currentSummary.settlements || [];
+  const historyRecords = (currentSummary.settlementRecords || [])
+    .slice()
+    .sort((a, b) => recordSortTime(b).localeCompare(recordSortTime(a)));
+  const total = roundMoney(settlements.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+
+  const body = el("div", { className: "settlement-modal-body" }, [
+    el("section", { className: "settlement-modal-section current" }, [
+      el("div", { className: "settlement-modal-title" }, [
+        el("div", { className: "settlement-modal-title-main" }, [
+          el("h3", { text: t("currentSettlementAdvice") }),
+          el("p", { className: "settlement-modal-hint", text: t("settlementModalHint") })
+        ]),
+        el("span", { className: settlements.length ? "pill" : "pill success", text: settlements.length ? money(total, "CNY") : t("settlementClearShort") })
+      ]),
+      settlements.length
+        ? el("div", { className: "settlement-list modal-settlement-list" }, settlements.map((item) => renderSettlementAdviceItem(item, currentSummary)))
+        : el("p", { className: "muted settlement-empty", text: t("settlementClear") })
+    ]),
+    el("section", { className: "settlement-modal-section history" }, [
+      el("div", { className: "settlement-modal-title" }, [
+        el("div", { className: "settlement-modal-title-main" }, [
+          el("h3", { text: t("settlementHistory") }),
+          el("p", { className: "settlement-modal-hint" , text: t("settlementHistoryHint") })
+        ]),
+        el("span", { className: "pill", text: String(historyRecords.length) })
+      ]),
+      historyRecords.length
+        ? el("div", { className: "settlement-history-list" }, historyRecords.map(renderSettlementHistoryItem))
+        : el("p", { className: "muted settlement-empty", text: t("noSettlementHistory") })
+    ]),
+    el("div", { className: "modal-actions settlement-modal-actions" }, [
+      el("button", { className: "btn ghost", text: t("cancel"), attrs: { type: "button" }, on: { click: closeModal } }),
+      el("button", {
+        className: "btn settle",
+        text: t("settleNow"),
+        attrs: { type: "button", disabled: settlements.length ? false : true },
+        on: { click: () => createSettlementRecords(ledger, settlements) }
+      })
+    ])
+  ]);
+
+  openModal(t("settlement"), body, "settlement-modal-shell");
+}
+
+function renderSettlementAdviceItem(item, summary) {
+  const nameMap = Object.fromEntries((summary.participants || []).map((p) => [p.id, localizedName(p.name, p.id)]));
+  const from = nameMap[item.fromId] || item.fromId;
+  const to = nameMap[item.toId] || item.toId;
+  return el("div", { className: "settlement-item enhanced modal-settlement-item" }, [
+    el("div", { className: "settlement-route compact" }, [
+      el("span", { className: "person-chip debtor", text: from }),
+      el("span", { className: "route-arrow-word", text: t("payAmount") }),
+      el("span", { className: "person-chip creditor", text: to })
+    ]),
+    el("div", { className: "settlement-transfer-card" }, [
+      el("div", { className: "settlement-transfer-label", text: t("settlementInstruction", { from, to, amount: money(item.amount, "CNY") }) }),
+      el("div", { className: "settlement-amount hero" }, [
+        el("small", { text: t("payAmount") }),
+        el("strong", { text: money(item.amount, "CNY") })
+      ])
+    ])
+  ]);
+}
+
+function renderSettlementHistoryItem(record) {
+  const from = consumerName(record.fromConsumerId);
+  const to = consumerName(record.toConsumerId);
+  const amount = roundMoney(record.amountCny || record.amount || 0);
+  return el("div", { className: "settlement-history-item" }, [
+    el("div", { className: "settlement-history-main" }, [
+      el("strong", { text: t("settlementRecordText", { from, to, amount: money(amount, "CNY") }) }),
+      el("small", { text: formatDateTime(record.createdAt || record.updatedAt || record.date) })
+    ]),
+    el("span", { className: "settlement-history-amount", text: money(amount, "CNY") })
+  ]);
+}
+
 async function toggleArchive(ledgerId) {
   const ledger = getLedger(ledgerId);
   if (!ledger) return;
@@ -1091,15 +1306,14 @@ async function settleLedger(ledger, summary = null) {
     toast(t("settlementClear"), "success");
     return;
   }
+  await createSettlementRecords(ledger, settlements);
+}
 
-  const total = roundMoney(settlements.reduce((sum, item) => sum + Number(item.amount || 0), 0));
-  const lines = settlements.map((item) => t("settlementRecordText", {
-    from: consumerName(item.fromId),
-    to: consumerName(item.toId),
-    amount: money(item.amount, "CNY")
-  }));
-
-  if (!confirm(`${t("confirmSettle", { count: settlements.length, amount: money(total, "CNY") })}\n\n${lines.join("\n")}`)) return;
+async function createSettlementRecords(ledger, settlements) {
+  if (!Array.isArray(settlements) || !settlements.length) {
+    toast(t("settlementClear"), "success");
+    return;
+  }
 
   const now = new Date().toISOString();
   const batchId = uid("settle_batch");
@@ -1129,6 +1343,7 @@ async function settleLedger(ledger, summary = null) {
 
   ledger.records.unshift(...records);
   ledger.updatedAt = now;
+  closeModal();
   await saveDataAndRender();
   toast(t("settlementSaved", { count: records.length }), "success");
 }
@@ -1247,6 +1462,9 @@ async function saveConfigAndRender() {
 }
 
 function toast(message, type = "info") {
+  // V0.7.6: suppress routine floating prompts after save/refresh/settlement.
+  // Keep error prompts so failures are still visible.
+  if (type !== "error") return;
   const item = el("div", { className: `toast ${type}`, text: message });
   toastBox.append(item);
   window.setTimeout(() => item.remove(), 3600);
@@ -1255,6 +1473,21 @@ function toast(message, type = "info") {
 function consumerName(id) {
   const consumer = state.config.consumers.find((item) => item.id === id);
   return localizedName(consumer?.name, id);
+}
+
+function preventMobilePageZoom() {
+  let lastTouchEnd = 0;
+  document.addEventListener("touchend", (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 320) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  document.addEventListener("gesturestart", (event) => {
+    event.preventDefault();
+  });
 }
 
 function bindNetworkEvents() {
