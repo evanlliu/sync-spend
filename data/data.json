@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-06T00:48:43.575Z",
+  "updatedAt": "2026-07-06T00:48:47.068Z",
   "ledgers": [
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
@@ -119,7 +119,15 @@
           "note": "",
           "photo": null,
           "createdAt": "2026-07-05T21:37:19.394Z",
-          "updatedAt": "2026-07-05T21:42:11.015Z"
+          "updatedAt": "2026-07-06T00:48:46.746Z",
+          "deleted": true,
+          "history": [
+            {
+              "action": "deleted",
+              "at": "2026-07-06T00:48:46.746Z",
+              "summary": "吴恒 $500.00 / ¥194.00"
+            }
+          ]
         },
         {
           "id": "record_mr8b9n77_12mleww1r2qlya",
