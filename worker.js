@@ -20,6 +20,7 @@
  * V0.7.0: 增加记录创建/修改历史、账本结算记录和新的页面信息布局。
  * V0.7.3: 移动端界面优化，前端样式更新。
  * V0.7.4: 移动端隐藏应收/应付卡片，新增记账改为悬浮图片按钮。
+ * V0.7.5: 移动端增加悬浮更多菜单，结算建议改为弹窗并显示历史结算。
  */
 
 const JSON_HEADERS = {
@@ -48,7 +49,7 @@ async function handleApiRequest(context) {
       return json({
         ok: true,
         app: "sync-spend",
-        version: "0.7.4",
+        version: "0.7.5",
         mode: "single-file-worker",
         hasPassword: Boolean(env.APP_PASSWORD),
         hasGithubToken: Boolean(env.GH_TOKEN),

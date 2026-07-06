@@ -2257,3 +2257,319 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
     padding-bottom: calc(104px + env(safe-area-inset-bottom));
   }
 }
+
+/* V0.7.5 - mobile floating actions and settlement modal. PC layout remains unchanged. */
+.mobile-fab-dock {
+  display: none;
+}
+
+.summary-grid-no-settlement {
+  grid-template-columns: minmax(260px, 0.8fr) minmax(520px, 1.6fr);
+}
+
+.settlement-modal-body {
+  display: grid;
+  gap: 16px;
+}
+
+.settlement-modal-section {
+  display: grid;
+  gap: 12px;
+}
+
+.settlement-modal-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settlement-modal-title h3 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.modal-settlement-list,
+.settlement-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.modal-settlement-item {
+  border-radius: 22px;
+  padding: 13px;
+  background: rgba(245, 248, 255, 0.78);
+  border: 1px solid rgba(23, 32, 51, 0.07);
+}
+
+.settlement-history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border-radius: 18px;
+  padding: 12px 13px;
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(23, 32, 51, 0.07);
+}
+
+.settlement-history-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.settlement-history-main strong {
+  overflow-wrap: anywhere;
+}
+
+.settlement-history-main small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.settlement-history-amount {
+  color: var(--success);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.settlement-empty {
+  margin: 0;
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(245, 248, 255, 0.72);
+}
+
+.settlement-modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: 2px;
+  padding-top: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.72) 22%, rgba(255, 255, 255, 0.92));
+}
+
+.settlement-modal-actions .btn[disabled] {
+  opacity: 0.48;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 1050px) {
+  .summary-grid-no-settlement {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .top-actions {
+    display: none !important;
+  }
+
+  .topbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brand-title strong {
+    max-width: 148px;
+  }
+
+  .mobile-fab-dock {
+    position: fixed;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    z-index: 60;
+    display: grid;
+    gap: 12px;
+    justify-items: end;
+    pointer-events: none;
+  }
+
+  .mobile-fab,
+  .mobile-action-menu {
+    pointer-events: auto;
+  }
+
+  .mobile-fab {
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    border-radius: 24px;
+    width: 62px;
+    height: 62px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 20px 48px rgba(31, 91, 212, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(22px) saturate(170%);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+  }
+
+  .mobile-add-fab {
+    position: relative;
+    order: 2;
+  }
+
+  .mobile-add-fab-icon {
+    width: 43px;
+    height: 43px;
+    border-radius: 17px;
+    background: url("../../assets/icons/icon-maskable-192.png") center / cover no-repeat;
+    box-shadow: 0 10px 22px rgba(47, 101, 255, 0.2);
+  }
+
+  .mobile-add-fab-plus {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(135deg, #1f74ff, #00b7ff);
+    border: 3px solid rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 18px rgba(31, 116, 255, 0.28);
+  }
+
+  .mobile-more-wrap {
+    position: relative;
+    order: 1;
+    display: grid;
+    justify-items: end;
+    pointer-events: auto;
+  }
+
+  .mobile-more-fab {
+    width: 54px;
+    height: 54px;
+    border-radius: 21px;
+    color: #172033;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    background: rgba(255, 255, 255, 0.84);
+  }
+
+  .mobile-more-fab span {
+    transform: translateY(-3px);
+  }
+
+  .mobile-action-menu {
+    position: absolute;
+    right: 0;
+    bottom: 64px;
+    width: min(230px, calc(100vw - 34px));
+    display: grid;
+    gap: 8px;
+    border-radius: 24px;
+    padding: 10px;
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+    transform-origin: right bottom;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    background: rgba(255, 255, 255, 0.76);
+    box-shadow: 0 22px 58px rgba(32, 55, 110, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  }
+
+  .mobile-more-wrap.is-open .mobile-action-menu {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .mobile-action-item,
+  .mobile-action-lang {
+    min-height: 42px;
+    border-radius: 16px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 850;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(23, 32, 51, 0.06);
+  }
+
+  .mobile-action-item {
+    cursor: pointer;
+  }
+
+  .mobile-action-item.is-active {
+    color: var(--primary);
+    background: rgba(47, 101, 255, 0.1);
+  }
+
+  .mobile-action-select {
+    width: 96px;
+    min-height: 34px;
+    padding: 0 28px 0 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  .ledger-detail .ledger-hero .hero-actions .btn.primary {
+    display: none !important;
+  }
+
+  .ledger-detail .ledger-hero .hero-actions .btn.settle {
+    min-width: 74px;
+  }
+
+  .settlement-modal-body {
+    gap: 12px;
+  }
+
+  .settlement-modal-title h3 {
+    font-size: 16px;
+  }
+
+  .modal-settlement-item {
+    grid-template-columns: 1fr;
+    border-radius: 20px;
+    padding: 12px;
+  }
+
+  .settlement-history-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    border-radius: 17px;
+    padding: 11px 12px;
+  }
+
+  .settlement-history-amount {
+    justify-self: start;
+  }
+
+  .settlement-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .main {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+}
+.mobile-fab-dock.is-hidden { display: none !important; }
+/* Keep modal above mobile floating buttons. */
+.modal-backdrop { z-index: 90; }
+@media (max-width: 760px) {
+  .brand-title > span:first-child {
+    max-width: 148px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+}

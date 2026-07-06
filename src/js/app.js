@@ -78,8 +78,77 @@ function renderShell() {
         languageSelect()
       ])
     ]),
-    el("main", { className: "main", attrs: { id: "main" } })
+    el("main", { className: "main", attrs: { id: "main" } }),
+    renderMobileFloatingActions()
   );
+}
+
+function renderMobileFloatingActions() {
+  if (!state.ready) return el("div", { className: "mobile-fab-dock is-hidden" });
+
+  const ledger = state.view === "ledger" && state.selectedLedgerId ? getLedger(state.selectedLedgerId) : null;
+  const addAction = resolveMobileAddAction(ledger);
+
+  const dock = el("div", { className: "mobile-fab-dock", attrs: { "aria-label": "mobile actions" } }, [
+    addAction ? el("button", {
+      className: `mobile-fab mobile-add-fab ${addAction.className || ""}`,
+      attrs: { type: "button", "aria-label": addAction.label },
+      on: { click: addAction.onClick }
+    }, [
+      el("span", { className: "mobile-add-fab-icon" }),
+      el("span", { className: "mobile-add-fab-plus", text: "+" })
+    ]) : null,
+    el("div", { className: "mobile-more-wrap" }, [
+      el("button", {
+        className: "mobile-fab mobile-more-fab",
+        attrs: { type: "button", "aria-label": t("moreActions"), "aria-expanded": "false" },
+        on: { click: toggleMobileActionMenu }
+      }, [el("span", { text: "•••" })]),
+      el("div", { className: "mobile-action-menu glass" }, [
+        el("button", { className: `mobile-action-item ${state.view === "dashboard" ? "is-active" : ""}`, text: t("dashboard"), on: { click: () => { closeMobileActionMenu(); navigate("dashboard"); } } }),
+        el("button", { className: `mobile-action-item ${state.view === "settings" ? "is-active" : ""}`, text: t("settings"), on: { click: () => { closeMobileActionMenu(); navigate("settings"); } } }),
+        el("label", { className: "mobile-action-lang" }, [
+          el("span", { text: t("language") }),
+          mobileLanguageSelect()
+        ])
+      ])
+    ])
+  ]);
+
+  return dock;
+}
+
+function resolveMobileAddAction(ledger) {
+  if (!state.ready) return null;
+  if (state.view === "ledger" && ledger) {
+    return { label: t("addExpense"), onClick: () => showExpenseModal(ledger) };
+  }
+  if (state.view === "dashboard") {
+    return { label: t("createLedger"), onClick: () => showLedgerModal(), className: "mobile-ledger-add-fab" };
+  }
+  if (state.view === "settings") {
+    return { label: t("addConsumer"), onClick: () => showConsumerModal(), className: "mobile-consumer-add-fab" };
+  }
+  return null;
+}
+
+function mobileLanguageSelect() {
+  const select = languageSelect();
+  select.classList.add("mobile-action-select");
+  return select;
+}
+
+function toggleMobileActionMenu(event) {
+  const wrap = event.currentTarget.closest(".mobile-more-wrap");
+  if (!wrap) return;
+  const open = !wrap.classList.contains("is-open");
+  document.querySelectorAll(".mobile-more-wrap.is-open").forEach((item) => item.classList.remove("is-open"));
+  wrap.classList.toggle("is-open", open);
+  event.currentTarget.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function closeMobileActionMenu() {
+  document.querySelectorAll(".mobile-more-wrap.is-open").forEach((item) => item.classList.remove("is-open"));
 }
 
 function getAppTitle() {
@@ -334,19 +403,18 @@ function renderLedgerDetail(ledger) {
   return el("section", { className: "ledger-detail" }, [
     el("div", { className: "hero glass ledger-hero" }, [
       el("div", { className: "ledger-hero-main" }, [
-        el("button", { className: "btn ghost small", text: `← ${t("back")}`, on: { click: () => navigate("dashboard") } }),
         el("h1", { text: ledger.name }),
         el("p", { className: "muted", text: `${t("createdAt")}: ${formatDateTime(ledger.createdAt)}` })
       ]),
       el("div", { className: "hero-actions" }, [
-        summary.settlements.length ? el("button", { className: "btn settle", text: t("settleNow"), on: { click: () => settleLedger(ledger, summary) } }) : null,
+        el("button", { className: "btn settle", text: t("settleNow"), on: { click: () => showSettlementModal(ledger, summary) } }),
         el("button", { className: "btn primary", text: t("addExpense"), on: { click: () => showExpenseModal(ledger) } }),
         el("button", { className: "btn ghost", text: t("edit"), on: { click: () => showLedgerModal(ledger) } }),
         el("button", { className: "btn ghost", text: ledger.archived ? t("unarchive") : t("archive"), on: { click: () => toggleArchive(ledger.id) } }),
         ledger.archived ? el("button", { className: "btn danger", text: t("deleteLedger"), on: { click: () => deleteArchivedLedger(ledger.id) } }) : null
       ])
     ]),
-    el("div", { className: "summary-grid" }, [
+    el("div", { className: "summary-grid summary-grid-no-settlement" }, [
       el("article", { className: "glass card total-card" }, [
         el("h2", { text: t("total") }),
         el("div", { className: "big-number", text: money(summary.totalCny, "CNY") }),
@@ -354,8 +422,7 @@ function renderLedgerDetail(ledger) {
         el("p", { className: "muted", text: `${t("perPerson")}: ${money(summary.perPerson, "CNY")}` }),
         summary.unallocatedCny > 0.01 ? el("p", { className: "hint warn", text: `${t("unallocated")}: ${money(summary.unallocatedCny, "CNY")}` }) : null
       ]),
-      renderBalances(summary),
-      renderSettlements(summary, ledger)
+      renderBalances(summary)
     ]),
     renderRecords(ledger, summary.records)
   ]);
@@ -1157,6 +1224,78 @@ function showImageViewer(src) {
   document.body.append(root);
 }
 
+function showSettlementModal(ledger, summary = null) {
+  const currentSummary = summary || ledgerSummary(ledger, state.config);
+  const settlements = currentSummary.settlements || [];
+  const historyRecords = (currentSummary.settlementRecords || [])
+    .slice()
+    .sort((a, b) => recordSortTime(b).localeCompare(recordSortTime(a)));
+  const total = roundMoney(settlements.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+
+  const body = el("div", { className: "settlement-modal-body" }, [
+    el("section", { className: "settlement-modal-section current" }, [
+      el("div", { className: "settlement-modal-title" }, [
+        el("h3", { text: t("currentSettlementAdvice") }),
+        el("span", { className: settlements.length ? "pill" : "pill success", text: settlements.length ? money(total, "CNY") : t("settlementClearShort") })
+      ]),
+      settlements.length
+        ? el("div", { className: "settlement-list modal-settlement-list" }, settlements.map((item) => renderSettlementAdviceItem(item, currentSummary)))
+        : el("p", { className: "muted settlement-empty", text: t("settlementClear") })
+    ]),
+    el("section", { className: "settlement-modal-section history" }, [
+      el("div", { className: "settlement-modal-title" }, [
+        el("h3", { text: t("settlementHistory") }),
+        el("span", { className: "pill", text: String(historyRecords.length) })
+      ]),
+      historyRecords.length
+        ? el("div", { className: "settlement-history-list" }, historyRecords.map(renderSettlementHistoryItem))
+        : el("p", { className: "muted settlement-empty", text: t("noSettlementHistory") })
+    ]),
+    el("div", { className: "modal-actions settlement-modal-actions" }, [
+      el("button", { className: "btn ghost", text: t("cancel"), attrs: { type: "button" }, on: { click: closeModal } }),
+      el("button", {
+        className: "btn settle",
+        text: t("settleNow"),
+        attrs: { type: "button", disabled: settlements.length ? false : true },
+        on: { click: () => createSettlementRecords(ledger, settlements) }
+      })
+    ])
+  ]);
+
+  openModal(t("settlement"), body);
+}
+
+function renderSettlementAdviceItem(item, summary) {
+  const nameMap = Object.fromEntries((summary.participants || []).map((p) => [p.id, localizedName(p.name, p.id)]));
+  const from = nameMap[item.fromId] || item.fromId;
+  const to = nameMap[item.toId] || item.toId;
+  return el("div", { className: "settlement-item enhanced modal-settlement-item" }, [
+    el("div", { className: "settlement-route" }, [
+      el("span", { className: "person-chip debtor", text: from }),
+      el("span", { className: "route-arrow", text: "→" }),
+      el("span", { className: "person-chip creditor", text: to })
+    ]),
+    el("div", { className: "settlement-amount" }, [
+      el("small", { text: t("payAmount") }),
+      el("strong", { text: money(item.amount, "CNY") })
+    ]),
+    el("p", { className: "settlement-readable", text: t("settlementInstruction", { from, to, amount: money(item.amount, "CNY") }) })
+  ]);
+}
+
+function renderSettlementHistoryItem(record) {
+  const from = consumerName(record.fromConsumerId);
+  const to = consumerName(record.toConsumerId);
+  const amount = roundMoney(record.amountCny || record.amount || 0);
+  return el("div", { className: "settlement-history-item" }, [
+    el("div", { className: "settlement-history-main" }, [
+      el("strong", { text: t("settlementRecordText", { from, to, amount: money(amount, "CNY") }) }),
+      el("small", { text: formatDateTime(record.createdAt || record.updatedAt || record.date) })
+    ]),
+    el("span", { className: "settlement-history-amount", text: money(amount, "CNY") })
+  ]);
+}
+
 async function toggleArchive(ledgerId) {
   const ledger = getLedger(ledgerId);
   if (!ledger) return;
@@ -1172,15 +1311,14 @@ async function settleLedger(ledger, summary = null) {
     toast(t("settlementClear"), "success");
     return;
   }
+  await createSettlementRecords(ledger, settlements);
+}
 
-  const total = roundMoney(settlements.reduce((sum, item) => sum + Number(item.amount || 0), 0));
-  const lines = settlements.map((item) => t("settlementRecordText", {
-    from: consumerName(item.fromId),
-    to: consumerName(item.toId),
-    amount: money(item.amount, "CNY")
-  }));
-
-  if (!confirm(`${t("confirmSettle", { count: settlements.length, amount: money(total, "CNY") })}\n\n${lines.join("\n")}`)) return;
+async function createSettlementRecords(ledger, settlements) {
+  if (!Array.isArray(settlements) || !settlements.length) {
+    toast(t("settlementClear"), "success");
+    return;
+  }
 
   const now = new Date().toISOString();
   const batchId = uid("settle_batch");
@@ -1210,6 +1348,7 @@ async function settleLedger(ledger, summary = null) {
 
   ledger.records.unshift(...records);
   ledger.updatedAt = now;
+  closeModal();
   await saveDataAndRender();
   toast(t("settlementSaved", { count: records.length }), "success");
 }
