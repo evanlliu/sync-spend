@@ -136,6 +136,8 @@ const dict = {
     moreActions: "更多操作",
     currentSettlementAdvice: "当前结算建议",
     settlementHistory: "历史结算记录",
+    settlementModalHint: "请按以下建议完成转账，结算后这部分金额不会重复计算。",
+    settlementHistoryHint: "这里会保留每次结算生成的历史记录，方便后续核对。",
     noSettlementHistory: "暂无历史结算记录。",
     settlementClearShort: "已结清",
     close: "关闭"
@@ -272,6 +274,8 @@ const dict = {
     moreActions: "More actions",
     currentSettlementAdvice: "Current settlement advice",
     settlementHistory: "Settlement history",
+    settlementModalHint: "Complete transfers based on the advice below. Once settled, these amounts will not be counted again.",
+    settlementHistoryHint: "Settlement records created previously are listed below for review.",
     noSettlementHistory: "No settlement history yet.",
     settlementClearShort: "Settled",
     close: "Close"

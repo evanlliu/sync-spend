@@ -1,12 +1,8 @@
 const PASSWORD_KEY = "syncSpend.password";
 const CLIENT_CONFIG_KEY = "syncSpend.clientConfig";
 
-export function getSavedPassword() {
-  return localStorage.getItem(PASSWORD_KEY) || "";
-}
-
-export function savePassword(password) {
-  localStorage.setItem(PASSWORD_KEY, password);
+export function clearSavedPassword() {
+  localStorage.removeItem(PASSWORD_KEY);
 }
 
 export async function loadClientConfig() {
@@ -32,20 +28,20 @@ export async function loadClientConfig() {
 
 export class ApiClient {
   constructor() {
-    this.password = getSavedPassword();
+    this.password = "";
     this.apiBaseUrl = "";
+    clearSavedPassword();
   }
 
   applyClientConfig(config = {}) {
     this.apiBaseUrl = normalizeBaseUrl(config.apiBaseUrl || "");
-    if (!this.password && config.accessPassword) {
-      this.setPassword(String(config.accessPassword));
-    }
+    this.password = String(config.accessPassword || "");
+    clearSavedPassword();
   }
 
   setPassword(password) {
-    this.password = password;
-    savePassword(password);
+    this.password = String(password || "");
+    clearSavedPassword();
   }
 
   async bootstrap() {

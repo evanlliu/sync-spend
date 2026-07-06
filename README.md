@@ -1,4 +1,4 @@
-# Sync Spend v0.7.6
+# Sync Spend v0.7.8
 
 PWA 多人记账本，前端部署在 GitHub，后端只需要在 Cloudflare 发布一个 `worker.js`。
 
@@ -351,7 +351,7 @@ Deployment failed, try again later.
 - 结算弹窗下方显示历史结算记录，后续结算只按未结清金额生成结算记录。
 
 
-## 20. V0.7.6 更新点
+## 20. V0.7.8 更新点
 
 - 移动端禁止双击页面缩放，页面固定比例显示。
 - 移动端左滑记录时，右侧悬浮按钮自动隐藏，避免遮挡编辑/删除操作。
@@ -360,3 +360,5 @@ Deployment failed, try again later.
 - 移动端“新增”和“三点更多”悬浮按钮统一大小。
 - 重新设计结算弹窗样式，当前结算建议和历史结算记录更清晰。
 - 取消保存、刷新、结算成功后的普通悬浮提示，只保留错误提示。
+- 移除前端登录密码弹窗；前端自动读取 `data/config.json` 中的 `cloudflare.accessPassword` 请求 Worker。
+- 启动时会清理旧版本遗留的 `syncSpend.password`，避免新设备乱输密码后本机持续 401。

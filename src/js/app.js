@@ -1,4 +1,4 @@
-import { ApiClient, getSavedPassword, loadClientConfig } from "./api.js";
+import { ApiClient, loadClientConfig } from "./api.js";
 import { equalShareMap, isSettlementRecord, ledgerSummary, recordShareMap, sanitizeSplitParticipants } from "./calculator.js";
 import { convertWithRate, formatRate, getToCnyRate, normalizeRate, roundMoney } from "./currency.js";
 import { getLanguage, LANGS, localizedName, setLanguage, t } from "./i18n.js";
@@ -43,13 +43,6 @@ async function init() {
   if (hasCache) {
     restoreLastOpenedLedger();
     renderApp();
-  }
-
-  const password = getSavedPassword();
-  if (!password) {
-    renderLogin();
-    maybeShowIosInstallTip();
-    return;
   }
 
   await loadRemote();
@@ -188,35 +181,6 @@ function languageSelect() {
   return select;
 }
 
-function renderLogin() {
-  renderShell();
-  const main = document.querySelector("#main");
-  clear(main);
-  main.append(
-    el("section", { className: "login-card glass" }, [
-      el("div", { className: "login-icon", text: "¥" }),
-      el("h1", { text: t("loginTitle") }),
-      el("p", { className: "muted", text: t("loginDesc") }),
-      el("form", { className: "form", on: { submit: submitLogin } }, [
-        el("label", { className: "field" }, [
-          el("span", { text: t("password") }),
-          el("input", { attrs: { type: "password", name: "password", autocomplete: "current-password", required: true } })
-        ]),
-        el("button", { className: "btn primary wide", text: t("enter"), attrs: { type: "submit" } })
-      ])
-    ])
-  );
-}
-
-async function submitLogin(event) {
-  event.preventDefault();
-  const form = new FormData(event.currentTarget);
-  const password = String(form.get("password") || "").trim();
-  if (!password) return;
-  api.setPassword(password);
-  await loadRemote();
-}
-
 async function loadRemote() {
   state.loading = true;
   renderLoading();
@@ -227,7 +191,7 @@ async function loadRemote() {
     renderShell();
     renderApp();
   } catch (error) {
-    if (!state.ready) renderLogin();
+    if (!state.ready) renderLoadError(error);
     toast(`${t("loadFailed")}: ${error.message}`, "error");
   } finally {
     state.loading = false;
@@ -241,6 +205,20 @@ function renderLoading() {
   main.append(el("section", { className: "glass center-card" }, [
     el("div", { className: "loader" }),
     el("p", { className: "muted", text: "Loading..." })
+  ]));
+}
+
+function renderLoadError(error) {
+  renderShell();
+  const main = document.querySelector("#main");
+  if (!main) return;
+  clear(main);
+  main.append(el("section", { className: "glass center-card" }, [
+    el("h1", { text: t("loadFailed") }),
+    el("p", { className: "muted", text: error?.message || t("loadFailed") }),
+    el("div", { className: "row-actions" }, [
+      el("button", { className: "btn primary", text: t("refreshData"), on: { click: loadRemote } })
+    ])
   ]));
 }
 
@@ -1244,7 +1222,10 @@ function showSettlementModal(ledger, summary = null) {
   const body = el("div", { className: "settlement-modal-body" }, [
     el("section", { className: "settlement-modal-section current" }, [
       el("div", { className: "settlement-modal-title" }, [
-        el("h3", { text: t("currentSettlementAdvice") }),
+        el("div", { className: "settlement-modal-title-main" }, [
+          el("h3", { text: t("currentSettlementAdvice") }),
+          el("p", { className: "settlement-modal-hint", text: t("settlementModalHint") })
+        ]),
         el("span", { className: settlements.length ? "pill" : "pill success", text: settlements.length ? money(total, "CNY") : t("settlementClearShort") })
       ]),
       settlements.length
@@ -1253,7 +1234,10 @@ function showSettlementModal(ledger, summary = null) {
     ]),
     el("section", { className: "settlement-modal-section history" }, [
       el("div", { className: "settlement-modal-title" }, [
-        el("h3", { text: t("settlementHistory") }),
+        el("div", { className: "settlement-modal-title-main" }, [
+          el("h3", { text: t("settlementHistory") }),
+          el("p", { className: "settlement-modal-hint" , text: t("settlementHistoryHint") })
+        ]),
         el("span", { className: "pill", text: String(historyRecords.length) })
       ]),
       historyRecords.length
@@ -1279,16 +1263,18 @@ function renderSettlementAdviceItem(item, summary) {
   const from = nameMap[item.fromId] || item.fromId;
   const to = nameMap[item.toId] || item.toId;
   return el("div", { className: "settlement-item enhanced modal-settlement-item" }, [
-    el("div", { className: "settlement-route" }, [
+    el("div", { className: "settlement-route compact" }, [
       el("span", { className: "person-chip debtor", text: from }),
-      el("span", { className: "route-arrow", text: "→" }),
+      el("span", { className: "route-arrow-word", text: t("payAmount") }),
       el("span", { className: "person-chip creditor", text: to })
     ]),
-    el("div", { className: "settlement-amount" }, [
-      el("small", { text: t("payAmount") }),
-      el("strong", { text: money(item.amount, "CNY") })
-    ]),
-    el("p", { className: "settlement-readable", text: t("settlementInstruction", { from, to, amount: money(item.amount, "CNY") }) })
+    el("div", { className: "settlement-transfer-card" }, [
+      el("div", { className: "settlement-transfer-label", text: t("settlementInstruction", { from, to, amount: money(item.amount, "CNY") }) }),
+      el("div", { className: "settlement-amount hero" }, [
+        el("small", { text: t("payAmount") }),
+        el("strong", { text: money(item.amount, "CNY") })
+      ])
+    ])
   ]);
 }
 
