@@ -20,7 +20,8 @@
  * V0.7.0: 增加记录创建/修改历史、账本结算记录和新的页面信息布局。
  * V0.7.3: 移动端界面优化，前端样式更新。
  * V0.7.4: 移动端隐藏应收/应付卡片，新增记账改为悬浮图片按钮。
- * V0.7.8: 移动端增加悬浮更多菜单，结算建议改为弹窗并显示历史结算。
+ * V0.7.8: 移除前端密码弹窗，强制使用 config.json 的 accessPassword。
+ * V0.7.9: 修复 data.json 超过 1MB 后 GitHub Contents API content 为空导致加载失败。
  */
 
 const JSON_HEADERS = {
@@ -49,7 +50,7 @@ async function handleApiRequest(context) {
       return json({
         ok: true,
         app: "sync-spend",
-        version: "0.7.8",
+        version: "0.7.9",
         mode: "single-file-worker",
         hasPassword: Boolean(env.APP_PASSWORD),
         hasGithubToken: Boolean(env.GH_TOKEN),
@@ -197,18 +198,55 @@ async function readJsonFile(env, filePath) {
 
   if (!res.ok) {
     const body = await safeReadText(res);
-    throw appError(res.status, "GITHUB_READ_FAILED", `Cannot read ${filePath} from GitHub: ${body}`);
+    throw appError(res.status, "GITHUB_READ_FAILED", `Cannot read ${filePath} from GitHub branch ${repo.branch}: ${body}`);
   }
 
   const payload = await res.json();
-  if (!payload.content || payload.type !== "file") {
-    throw appError(500, "GITHUB_INVALID_FILE", `${filePath} is not a GitHub file response`);
+  if (payload.type !== "file") {
+    throw appError(500, "GITHUB_INVALID_FILE", `${filePath} is not a file on GitHub branch ${repo.branch}. Actual type: ${payload.type || "unknown"}`);
   }
 
-  return {
-    data: JSON.parse(base64ToUtf8(payload.content)),
-    sha: payload.sha
-  };
+  let rawJson = "";
+  if (payload.content && payload.encoding === "base64") {
+    rawJson = base64ToUtf8(payload.content);
+  } else {
+    // GitHub Contents API returns empty content for files larger than 1MB.
+    // data.json can exceed 1MB because images are currently stored as base64,
+    // so fetch the same file through the raw media endpoint and keep the SHA from metadata.
+    rawJson = await readRawGithubFile(env, filePath);
+  }
+
+  if (!rawJson || !rawJson.trim()) {
+    throw appError(500, "GITHUB_EMPTY_FILE", `${filePath} on branch ${repo.branch} is empty. Please restore a valid JSON file.`);
+  }
+
+  try {
+    return {
+      data: JSON.parse(rawJson),
+      sha: payload.sha
+    };
+  } catch (error) {
+    throw appError(500, "GITHUB_INVALID_JSON", `${filePath} on branch ${repo.branch} is not valid JSON: ${error.message}`);
+  }
+}
+
+async function readRawGithubFile(env, filePath) {
+  const repo = repoInfo(env);
+  const url = `${githubContentUrl(env, filePath)}?ref=${encodeURIComponent(repo.branch)}`;
+  const res = await fetch(url, {
+    headers: {
+      ...githubHeaders(env),
+      accept: "application/vnd.github.raw"
+    },
+    cf: { cacheTtl: 0, cacheEverything: false }
+  });
+
+  if (!res.ok) {
+    const body = await safeReadText(res);
+    throw appError(res.status, "GITHUB_RAW_READ_FAILED", `Cannot read raw ${filePath} from GitHub branch ${repo.branch}: ${body}`);
+  }
+
+  return await res.text();
 }
 
 async function writeJsonFile(env, filePath, value, expectedSha, message) {
