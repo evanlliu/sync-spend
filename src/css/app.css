@@ -938,6 +938,10 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
     rgba(255, 255, 255, 0.38);
 }
 
+.record-swipe-content {
+  display: contents;
+}
+
 .record-body-enhanced {
   display: grid;
   gap: 12px;
@@ -1876,19 +1880,42 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
   .record-item-enhanced,
   .expense-record,
   .settlement-record {
-    display: grid;
-    grid-template-columns: 68px minmax(0, 1fr);
-    gap: 12px;
-    align-items: start;
-    padding: 14px;
+    position: relative;
+    display: block;
+    gap: 0;
+    align-items: stretch;
+    padding: 0;
     border-radius: 28px;
-    background: rgba(255, 255, 255, 0.84);
-    border: 1px solid rgba(255, 255, 255, 0.74);
-    box-shadow: 0 14px 36px rgba(69, 103, 160, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.86);
+    overflow: hidden;
+    background: transparent;
+    border: 0;
+    box-shadow: 0 14px 36px rgba(69, 103, 160, 0.12);
+    touch-action: pan-y;
   }
 
   .record-item-enhanced::before {
     display: none;
+  }
+
+  .record-swipe-content {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    min-height: 100%;
+    padding: 14px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: transform;
+  }
+
+  .swipe-record.swiped .record-swipe-content {
+    transform: translateX(-112px);
   }
 
   .record-photo,
@@ -1988,8 +2015,10 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
     background: rgba(245, 248, 255, 0.86);
   }
 
-  .record-meta-chip:nth-child(3),
-  .record-meta-chip:nth-child(4) {
+  .record-meta-chip.meta-date,
+  .record-meta-chip.meta-created,
+  .record-meta-chip.meta-updated,
+  .record-meta-chip.meta-split-participants {
     display: none;
   }
 
@@ -2036,21 +2065,44 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
     padding: 8px 10px;
   }
 
-  .record-item-enhanced > .row-actions.vertical {
-    grid-column: 2;
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    gap: 6px;
-    width: 100%;
-    margin-top: -2px;
+  .record-item-enhanced > .row-actions.vertical,
+  .record-item-enhanced > .swipe-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    display: grid;
+    grid-auto-flow: row;
+    align-content: center;
+    justify-content: center;
+    gap: 8px;
+    width: 112px;
+    margin: 0;
+    padding: 12px 10px 12px 14px;
+    background: linear-gradient(135deg, rgba(47, 101, 255, 0.12), rgba(255, 77, 100, 0.12));
   }
 
-  .record-item-enhanced > .row-actions.vertical .btn {
-    flex: 0 0 auto;
-    min-height: 30px;
-    padding: 0 10px;
+  .record-item-enhanced > .row-actions.vertical .btn,
+  .record-item-enhanced > .swipe-actions .btn {
+    width: 76px;
+    min-height: 34px;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0 9px;
     font-size: 12px;
+    box-shadow: 0 8px 18px rgba(23, 32, 51, 0.12);
+  }
+
+  .record-item-enhanced > .swipe-actions .swipe-edit {
+    color: #172033;
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .record-item-enhanced > .swipe-actions .swipe-delete {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.28);
+    background: linear-gradient(135deg, #ff4d64, #ff7c65);
   }
 
   .modal-backdrop {
@@ -2081,9 +2133,7 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
     max-width: 84px;
   }
 
-  .record-item-enhanced,
-  .expense-record,
-  .settlement-record {
+  .record-swipe-content {
     grid-template-columns: 58px minmax(0, 1fr);
     gap: 10px;
     padding: 12px;

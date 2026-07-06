@@ -491,7 +491,7 @@ function renderExpenseRecord(ledger, record) {
   const participantNames = sanitizeSplitParticipants(record, ledger.participantIds).map(consumerName).join(" / ");
   const shareEntries = Object.entries(recordShareMap(record, ledger.participantIds));
 
-  return el("div", { className: "record-item liquid-card record-item-enhanced expense-record" }, [
+  return recordCard("expense-record", [
     record.photo ? photoThumb(record.photo) : el("div", { className: "record-photo placeholder", text: "📷" }),
     el("div", { className: "record-body record-body-enhanced" }, [
       el("div", { className: "record-primary-line" }, [
@@ -507,12 +507,12 @@ function renderExpenseRecord(ledger, record) {
         ])
       ]),
       el("div", { className: "record-meta-grid" }, [
-        recordMetaChip(t("date"), formatDate(record.date)),
-        recordMetaChip(t("rate"), formatRate(record.rateToCny) || "-"),
-        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt)),
-        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt)),
-        recordMetaChip(t("splitMethod"), record.splitMode === "amount" ? t("splitByAmount") : t("splitEqual")),
-        recordMetaChip(t("splitParticipants"), participantNames || "-")
+        recordMetaChip(t("date"), formatDate(record.date), "date"),
+        recordMetaChip(t("rate"), formatRate(record.rateToCny) || "-", "rate"),
+        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt), "created"),
+        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt), "updated"),
+        recordMetaChip(t("splitMethod"), record.splitMode === "amount" ? t("splitByAmount") : t("splitEqual"), "split-method"),
+        recordMetaChip(t("splitParticipants"), participantNames || "-", "split-participants")
       ]),
       shareEntries.length ? el("div", { className: "record-share-grid" }, shareEntries.map(([id, value]) => (
         el("span", { className: "record-share-chip" }, [
@@ -522,11 +522,10 @@ function renderExpenseRecord(ledger, record) {
       ))) : null,
       record.note ? el("p", { className: "record-note", text: record.note }) : null,
       renderRecordHistory(record)
-    ]),
-    el("div", { className: "row-actions vertical" }, [
-      el("button", { className: "btn ghost small", text: t("edit"), on: { click: () => showExpenseModal(ledger, record) } }),
-      el("button", { className: "btn danger small", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
     ])
+  ], [
+    el("button", { className: "btn ghost small swipe-edit", text: t("edit"), on: { click: () => showExpenseModal(ledger, record) } }),
+    el("button", { className: "btn danger small swipe-delete", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
   ]);
 }
 
@@ -535,7 +534,7 @@ function renderSettlementRecord(ledger, record) {
   const to = consumerName(record.toConsumerId);
   const amount = roundMoney(record.amountCny || record.amount || 0);
 
-  return el("div", { className: "record-item liquid-card record-item-enhanced settlement-record" }, [
+  return recordCard("settlement-record", [
     el("div", { className: "record-photo settlement-icon", text: "✓" }),
     el("div", { className: "record-body record-body-enhanced" }, [
       el("div", { className: "record-primary-line" }, [
@@ -552,18 +551,75 @@ function renderSettlementRecord(ledger, record) {
       ]),
       el("p", { className: "settlement-record-readable", text: t("settlementRecordText", { from, to, amount: money(amount, "CNY") }) }),
       el("div", { className: "record-meta-grid" }, [
-        recordMetaChip(t("date"), formatDate(record.date)),
-        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt)),
-        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt)),
-        recordMetaChip(t("recordType"), t("settlementRecord"))
+        recordMetaChip(t("date"), formatDate(record.date), "date"),
+        recordMetaChip(t("createdAt"), formatDateTime(record.createdAt), "created"),
+        recordMetaChip(t("updatedAt"), formatDateTime(record.updatedAt), "updated"),
+        recordMetaChip(t("recordType"), t("settlementRecord"), "record-type")
       ]),
       record.note ? el("p", { className: "record-note", text: record.note }) : null,
       renderRecordHistory(record)
-    ]),
-    el("div", { className: "row-actions vertical" }, [
-      el("button", { className: "btn danger small", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
     ])
+  ], [
+    el("button", { className: "btn danger small swipe-delete", text: t("delete"), on: { click: () => deleteRecord(ledger.id, record.id) } })
   ]);
+}
+
+function recordCard(extraClassName, contentChildren, actionChildren) {
+  const node = el("div", { className: `record-item liquid-card record-item-enhanced swipe-record ${extraClassName}` }, [
+    el("div", { className: "record-swipe-content" }, contentChildren),
+    el("div", { className: "row-actions vertical swipe-actions" }, actionChildren)
+  ]);
+  installSwipeReveal(node);
+  return node;
+}
+
+function installSwipeReveal(node) {
+  let startX = 0;
+  let startY = 0;
+  let tracking = false;
+
+  node.addEventListener("pointerdown", (event) => {
+    if (!isMobileViewport()) return;
+    if (event.target.closest("button, a, input, select, textarea, summary, .row-actions")) return;
+    startX = event.clientX;
+    startY = event.clientY;
+    tracking = true;
+  });
+
+  node.addEventListener("pointermove", (event) => {
+    if (!tracking || !isMobileViewport()) return;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    if (Math.abs(dx) < 26 || Math.abs(dx) <= Math.abs(dy)) return;
+    if (dx < 0) {
+      closeOtherSwipeRecords(node);
+      node.classList.add("swiped");
+    } else {
+      node.classList.remove("swiped");
+    }
+    tracking = false;
+  });
+
+  node.addEventListener("pointerup", (event) => {
+    if (!tracking) return;
+    tracking = false;
+    if (!isMobileViewport()) return;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && node.classList.contains("swiped")) {
+      node.classList.remove("swiped");
+    }
+  });
+}
+
+function closeOtherSwipeRecords(current) {
+  document.querySelectorAll(".swipe-record.swiped").forEach((item) => {
+    if (item !== current) item.classList.remove("swiped");
+  });
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 760px)").matches;
 }
 
 function recordSortTime(record) {
@@ -607,8 +663,9 @@ function historyActionLabel(action) {
   return t(key);
 }
 
-function recordMetaChip(label, value) {
-  return el("span", { className: "record-meta-chip" }, [
+function recordMetaChip(label, value, key = "") {
+  const safeKey = key ? ` meta-${key}` : "";
+  return el("span", { className: `record-meta-chip${safeKey}` }, [
     el("small", { text: label }),
     el("strong", { text: value })
   ]);
