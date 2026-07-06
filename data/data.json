@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-06T02:53:25.305Z",
+  "updatedAt": "2026-07-06T04:22:28.826Z",
   "ledgers": [
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
@@ -11,6 +11,29 @@
         "consumer_mr8b5dem_r23g5l93jxnr"
       ],
       "records": [
+        {
+          "id": "settlement_mr8prrd9_1wj2yp21jrbdmw",
+          "type": "settlement",
+          "date": "2026-07-06",
+          "fromConsumerId": "consumer_mr8b5dem_r23g5l93jxnr",
+          "toConsumerId": "consumer_evan",
+          "amount": 294.15,
+          "currency": "CNY",
+          "amountCny": 294.15,
+          "rateToCny": 1,
+          "rateSource": "settlement",
+          "settlementBatchId": "settle_batch_mr8prrd9_1689yutnhi40e",
+          "note": "",
+          "createdAt": "2026-07-06T04:22:28.173Z",
+          "updatedAt": "2026-07-06T04:22:28.173Z",
+          "history": [
+            {
+              "action": "created",
+              "at": "2026-07-06T04:22:28.173Z",
+              "summary": "吴恒 向 刘彬 支付了 ¥294.15"
+            }
+          ]
+        },
         {
           "id": "record_mr8m5f0e_u2m0k2fnqthx",
           "date": "2026-07-05",
@@ -236,7 +259,7 @@
         }
       ],
       "createdAt": "2026-07-05T21:36:20.135Z",
-      "updatedAt": "2026-07-06T02:53:24.713Z"
+      "updatedAt": "2026-07-06T04:22:28.173Z"
     }
   ]
 }
