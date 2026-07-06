@@ -19,6 +19,7 @@
  * V0.6.8: 新增/编辑弹窗标题栏和底部保存区固定，表单内容独立滚动。
  * V0.7.0: 增加记录创建/修改历史、账本结算记录和新的页面信息布局。
  * V0.7.3: 移动端界面优化，前端样式更新。
+ * V0.7.4: 移动端隐藏应收/应付卡片，新增记账改为悬浮图片按钮。
  */
 
 const JSON_HEADERS = {
@@ -47,7 +48,7 @@ async function handleApiRequest(context) {
       return json({
         ok: true,
         app: "sync-spend",
-        version: "0.7.3",
+        version: "0.7.4",
         mode: "single-file-worker",
         hasPassword: Boolean(env.APP_PASSWORD),
         hasGithubToken: Boolean(env.GH_TOKEN),
