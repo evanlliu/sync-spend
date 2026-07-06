@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-06T00:53:50.171Z",
+  "updatedAt": "2026-07-06T00:53:54.994Z",
   "ledgers": [
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
@@ -64,14 +64,20 @@
           "settlementBatchId": "settle_batch_mr8eyeyk_3r5lkv1s3nhb9",
           "note": "",
           "createdAt": "2026-07-05T23:19:42.908Z",
-          "updatedAt": "2026-07-05T23:19:42.908Z",
+          "updatedAt": "2026-07-06T00:53:54.538Z",
           "history": [
             {
               "action": "created",
               "at": "2026-07-05T23:19:42.908Z",
               "summary": "吴恒 向 刘彬 支付了 ¥104.25"
+            },
+            {
+              "action": "deleted",
+              "at": "2026-07-06T00:53:54.538Z",
+              "summary": "吴恒 向 刘彬 支付了 ¥104.25"
             }
-          ]
+          ],
+          "deleted": true
         },
         {
           "id": "record_mr8cuj0c_1p3xh529gy8b",
