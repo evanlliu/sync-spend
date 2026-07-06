@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-06T02:40:50.777Z",
+  "updatedAt": "2026-07-06T02:41:23.890Z",
   "ledgers": [
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
@@ -11,6 +11,34 @@
         "consumer_mr8b5dem_r23g5l93jxnr"
       ],
       "records": [
+        {
+          "id": "record_mr8m5f0e_u2m0k2fnqthx",
+          "date": "2026-07-05",
+          "consumerId": "consumer_evan",
+          "amount": 200,
+          "currency": "CNY",
+          "amountCny": 200,
+          "rateToCny": 1,
+          "rateSource": "live",
+          "splitMode": "equal",
+          "splitParticipantIds": [
+            "consumer_evan",
+            "consumer_mr8b5dem_r23g5l93jxnr"
+          ],
+          "splitAmountsCny": {},
+          "note": "",
+          "photo": null,
+          "createdAt": "2026-07-06T02:41:06.879Z",
+          "type": "expense",
+          "updatedAt": "2026-07-06T02:41:23.261Z",
+          "history": [
+            {
+              "action": "created",
+              "at": "2026-07-06T02:41:23.261Z",
+              "summary": "刘彬 ¥200.00 / ¥200.00"
+            }
+          ]
+        },
         {
           "id": "record_mr8iqpc6_1ixfdlz10appy1",
           "date": "2026-07-04",
@@ -203,7 +231,7 @@
         }
       ],
       "createdAt": "2026-07-05T21:36:20.135Z",
-      "updatedAt": "2026-07-06T02:40:50.003Z"
+      "updatedAt": "2026-07-06T02:41:23.261Z"
     }
   ]
 }
