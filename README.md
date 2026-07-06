@@ -1,4 +1,4 @@
-# Sync Spend v0.7.2
+# Sync Spend v0.7.3
 
 PWA 多人记账本，前端部署在 GitHub，后端只需要在 Cloudflare 发布一个 `worker.js`。
 
@@ -318,7 +318,7 @@ Deployment failed, try again later.
 不要覆盖线上 `data/data.json` 和 `data/config.json`。升级时只覆盖代码文件和 `worker.js`。
 
 
-## 16. V0.7.2 更新点
+## 16. V0.7.3 更新点
 
 - 仅优化移动端界面，PC 端保持原有布局。
 - 移动端顶部栏更紧凑，适合 iOS Safari / 添加到主屏幕后使用。
@@ -327,7 +327,7 @@ Deployment failed, try again later.
 - 移动端记录列表增加日期分组标题，查看流水更直观。
 - 移动端新增记账按钮固定到底部，方便单手操作。
 
-## 17. V0.7.2 更新点
+## 17. V0.7.3 更新点
 
 - 仅优化移动端记账记录交互，PC 端布局不变。
 - 移动端记录卡片隐藏重复信息：卡片内不再显示“日期”和“分摊参与人”，日期保留在分组标题中，分摊明细保留在金额标签中。
