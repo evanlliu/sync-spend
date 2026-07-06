@@ -32,6 +32,7 @@ init();
 
 async function init() {
   bindNetworkEvents();
+  preventMobilePageZoom();
   registerServiceWorker();
   renderShell();
 
@@ -661,8 +662,10 @@ function installSwipeReveal(node) {
     if (dx < 0) {
       closeOtherSwipeRecords(node);
       node.classList.add("swiped");
+      document.body.classList.add("mobile-record-actions-open");
     } else {
       node.classList.remove("swiped");
+      updateSwipeOpenState();
     }
     tracking = false;
   });
@@ -675,6 +678,7 @@ function installSwipeReveal(node) {
     const dy = event.clientY - startY;
     if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && node.classList.contains("swiped")) {
       node.classList.remove("swiped");
+      updateSwipeOpenState();
     }
   });
 }
@@ -683,6 +687,11 @@ function closeOtherSwipeRecords(current) {
   document.querySelectorAll(".swipe-record.swiped").forEach((item) => {
     if (item !== current) item.classList.remove("swiped");
   });
+  updateSwipeOpenState();
+}
+
+function updateSwipeOpenState() {
+  document.body.classList.toggle("mobile-record-actions-open", Boolean(document.querySelector(".swipe-record.swiped")));
 }
 
 function isMobileViewport() {
@@ -1197,10 +1206,10 @@ function modalActions() {
   ]);
 }
 
-function openModal(title, body) {
+function openModal(title, body, modalClassName = "") {
   clear(modalRoot);
   modalRoot.append(el("div", { className: "modal-backdrop", on: { click: (event) => { if (event.target.classList.contains("modal-backdrop")) closeModal(); } } }, [
-    el("section", { className: "modal glass" }, [
+    el("section", { className: `modal glass ${modalClassName}`.trim() }, [
       el("div", { className: "modal-head" }, [
         el("h2", { text: title }),
         el("button", { className: "btn ghost small", text: "×", attrs: { type: "button", "aria-label": t("close") }, on: { click: closeModal } })
@@ -1262,7 +1271,7 @@ function showSettlementModal(ledger, summary = null) {
     ])
   ]);
 
-  openModal(t("settlement"), body);
+  openModal(t("settlement"), body, "settlement-modal-shell");
 }
 
 function renderSettlementAdviceItem(item, summary) {
@@ -1467,6 +1476,9 @@ async function saveConfigAndRender() {
 }
 
 function toast(message, type = "info") {
+  // V0.7.6: suppress routine floating prompts after save/refresh/settlement.
+  // Keep error prompts so failures are still visible.
+  if (type !== "error") return;
   const item = el("div", { className: `toast ${type}`, text: message });
   toastBox.append(item);
   window.setTimeout(() => item.remove(), 3600);
@@ -1475,6 +1487,21 @@ function toast(message, type = "info") {
 function consumerName(id) {
   const consumer = state.config.consumers.find((item) => item.id === id);
   return localizedName(consumer?.name, id);
+}
+
+function preventMobilePageZoom() {
+  let lastTouchEnd = 0;
+  document.addEventListener("touchend", (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 320) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  document.addEventListener("gesturestart", (event) => {
+    event.preventDefault();
+  });
 }
 
 function bindNetworkEvents() {
