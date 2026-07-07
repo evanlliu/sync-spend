@@ -58,7 +58,7 @@ function renderShell() {
       el("div", { className: "orb orb-b" }),
       el("div", { className: "orb orb-c" })
     ]),
-    el("header", { className: "topbar glass" }, [
+    el("header", { className: `topbar glass topbar-${state.view || "dashboard"}` }, [
       el("button", { className: "brand", on: { click: () => navigate("dashboard") } }, [
         el("img", { attrs: { src: new URL("../../assets/icons/icon-192.png", import.meta.url).toString(), alt: "" } }),
         el("span", { className: "brand-title" }, [
@@ -382,8 +382,7 @@ function renderLedgerDetail(ledger) {
   return el("section", { className: "ledger-detail" }, [
     el("div", { className: "hero glass ledger-hero" }, [
       el("div", { className: "ledger-hero-main" }, [
-        el("h1", { text: ledger.name }),
-        el("p", { className: "muted", text: `${t("createdAt")}: ${formatDateTime(ledger.createdAt)}` })
+        el("h1", { text: ledger.name })
       ]),
       el("div", { className: "hero-actions" }, [
         el("button", { className: "btn settle", text: t("settleNow"), on: { click: () => showSettlementModal(ledger, summary) } }),
@@ -793,17 +792,47 @@ function showLedgerModal(ledger = null) {
   };
 
   const nameInput = input({ name: "name", value: draft.name, required: true });
-  const checks = el("div", { className: "check-grid" });
+  const checks = el("div", { className: "check-grid ledger-participant-grid" });
   for (const consumer of activeConsumers()) {
     const checkbox = el("input", { attrs: { type: "checkbox", value: consumer.id, checked: draft.participantIds.includes(consumer.id) } });
-    checks.append(el("label", { className: "check-pill" }, [checkbox, el("span", { text: localizedName(consumer.name, consumer.id) })]));
+    checks.append(el("label", { className: "check-pill ledger-participant-pill" }, [checkbox, el("span", { text: localizedName(consumer.name, consumer.id) })]));
   }
 
-  openModal(editing ? t("edit") : t("createLedger"), el("form", { className: "form", on: { submit } }, [
-    field(t("ledgerName"), nameInput),
-    field(t("participants"), checks),
+  const formChildren = [
+    el("section", { className: "ledger-form-section ledger-form-primary" }, [
+      el("div", { className: "ledger-form-section-title" }, [
+        el("strong", { text: t("basicInfo") }),
+        el("span", { text: editing ? t("editLedgerHint") : t("createLedgerHint") })
+      ]),
+      field(t("ledgerName"), nameInput)
+    ]),
+    editing ? el("section", { className: "ledger-form-section ledger-form-time" }, [
+      el("div", { className: "ledger-form-section-title" }, [
+        el("strong", { text: t("ledgerTimeInfo") }),
+        el("span", { text: t("readonly") })
+      ]),
+      el("div", { className: "ledger-time-grid" }, [
+        el("div", { className: "ledger-time-item" }, [
+          el("span", { text: t("createdAt") }),
+          el("strong", { text: formatDateTime(draft.createdAt) || "-" })
+        ]),
+        el("div", { className: "ledger-time-item" }, [
+          el("span", { text: t("updatedAt") }),
+          el("strong", { text: draft.updatedAt ? formatDateTime(draft.updatedAt) : "-" })
+        ])
+      ])
+    ]) : null,
+    el("section", { className: "ledger-form-section ledger-form-participants" }, [
+      el("div", { className: "ledger-form-section-title" }, [
+        el("strong", { text: t("participants") }),
+        el("span", { text: t("participantsHint") })
+      ]),
+      checks
+    ]),
     modalActions()
-  ]));
+  ];
+
+  openModal(editing ? t("editLedger") : t("createLedger"), el("form", { className: "form ledger-form", on: { submit } }, formChildren), "ledger-modal-shell");
 
   async function submit(event) {
     event.preventDefault();

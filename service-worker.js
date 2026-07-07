@@ -1,4 +1,4 @@
-const CACHE_NAME = "sync-spend-shell-v079";
+const CACHE_NAME = "sync-spend-shell-v080";
 const RELATIVE_APP_SHELL = [
   "./",
   "./index.html",

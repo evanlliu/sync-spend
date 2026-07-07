@@ -2932,3 +2932,147 @@ input[type="datetime-local"].input {
     box-shadow: 0 -16px 32px rgba(63, 100, 166, 0.1);
   }
 }
+
+/* V0.8.0 - ledger mobile header and ledger edit modal polish */
+.ledger-modal-shell .modal-head {
+  background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(238,246,255,0.78));
+}
+
+.ledger-form {
+  gap: 14px;
+}
+
+.ledger-form-section {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(30, 64, 125, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.ledger-form-primary {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(237, 246, 255, 0.76));
+}
+
+.ledger-form-section-title {
+  display: grid;
+  gap: 4px;
+}
+
+.ledger-form-section-title strong {
+  color: var(--ink);
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.ledger-form-section-title span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ledger-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ledger-time-item {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(247, 250, 255, 0.86);
+  border: 1px solid rgba(23, 32, 51, 0.06);
+}
+
+.ledger-time-item span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ledger-time-item strong {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.ledger-participant-grid {
+  gap: 8px;
+}
+
+.ledger-participant-pill {
+  min-height: 44px;
+  justify-content: flex-start;
+}
+
+@media (max-width: 760px) {
+  .topbar:not(.topbar-dashboard) .brand {
+    display: none;
+  }
+
+  .topbar:not(.topbar-dashboard) {
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    backdrop-filter: none;
+  }
+
+  .ledger-hero {
+    padding-top: 18px;
+    padding-bottom: 16px;
+  }
+
+  .ledger-hero-main h1 {
+    margin-bottom: 0;
+  }
+
+  .ledger-modal-shell {
+    background: linear-gradient(180deg, #f2f8ff 0%, #ffffff 44%, #ffffff 100%);
+  }
+
+  .ledger-modal-shell .modal-head {
+    background: linear-gradient(135deg, #ffffff, #eef6ff);
+  }
+
+  .ledger-form {
+    gap: 12px;
+    padding-top: 12px !important;
+  }
+
+  .ledger-form-section {
+    padding: 14px;
+    border-radius: 22px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(42, 82, 151, 0.08);
+  }
+
+  .ledger-form-primary {
+    background: linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
+  }
+
+  .ledger-time-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ledger-time-item {
+    padding: 11px 12px;
+    border-radius: 16px;
+  }
+
+  .ledger-participant-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ledger-participant-pill {
+    min-height: 42px;
+    border-radius: 16px;
+    padding: 8px 10px;
+  }
+}
