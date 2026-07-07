@@ -5,24 +5,38 @@ export function clearSavedPassword() {
   localStorage.removeItem(PASSWORD_KEY);
 }
 
-export async function loadClientConfig() {
+export async function loadClientConfig({ cacheFirst = true } = {}) {
+  const cached = readCachedClientConfig();
+  if (cacheFirst && cached.apiBaseUrl) {
+    refreshClientConfig().catch(() => {});
+    return cached;
+  }
+
   try {
-    const res = await fetch(new URL("../../data/config.json", import.meta.url), { cache: "no-store" });
-    if (!res.ok) throw new Error(`config.json HTTP ${res.status}`);
-    const config = await res.json();
-    const cloudflare = config.cloudflare || {};
-    const clientConfig = {
-      apiBaseUrl: normalizeBaseUrl(cloudflare.apiBaseUrl || cloudflare.workerUrl || cloudflare.url || ""),
-      accessPassword: String(cloudflare.accessPassword || cloudflare.appPassword || "")
-    };
-    localStorage.setItem(CLIENT_CONFIG_KEY, JSON.stringify(clientConfig));
-    return clientConfig;
+    return await refreshClientConfig();
   } catch {
-    try {
-      return JSON.parse(localStorage.getItem(CLIENT_CONFIG_KEY) || "{}");
-    } catch {
-      return {};
-    }
+    return cached || {};
+  }
+}
+
+async function refreshClientConfig() {
+  const res = await fetch(new URL("../../data/config.json", import.meta.url), { cache: "no-store" });
+  if (!res.ok) throw new Error(`config.json HTTP ${res.status}`);
+  const config = await res.json();
+  const cloudflare = config.cloudflare || {};
+  const clientConfig = {
+    apiBaseUrl: normalizeBaseUrl(cloudflare.apiBaseUrl || cloudflare.workerUrl || cloudflare.url || ""),
+    accessPassword: String(cloudflare.accessPassword || cloudflare.appPassword || "")
+  };
+  localStorage.setItem(CLIENT_CONFIG_KEY, JSON.stringify(clientConfig));
+  return clientConfig;
+}
+
+function readCachedClientConfig() {
+  try {
+    return JSON.parse(localStorage.getItem(CLIENT_CONFIG_KEY) || "{}") || {};
+  } catch {
+    return {};
   }
 }
 

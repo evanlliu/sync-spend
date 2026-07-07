@@ -1,4 +1,4 @@
-const CACHE_NAME = "sync-spend-shell-v087";
+const CACHE_NAME = "sync-spend-shell-v088";
 const RELATIVE_APP_SHELL = [
   "./",
   "./index.html",
@@ -48,7 +48,16 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match(INDEX_URL)));
+    event.respondWith(
+      caches.match(INDEX_URL).then((cached) => {
+        const fresh = fetch(request).then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(INDEX_URL, copy));
+          return response;
+        }).catch(() => cached);
+        return cached || fresh;
+      })
+    );
     return;
   }
 

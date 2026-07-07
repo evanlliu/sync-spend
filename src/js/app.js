@@ -28,24 +28,34 @@ const toastBox = document.querySelector("#toast");
 const modalRoot = document.querySelector("#modal-root");
 
 setLanguage(localStorage.getItem("syncSpend.lang") || "zh-CN");
+
+let remoteLoadPromise = null;
 init();
 
 async function init() {
   bindNetworkEvents();
   preventMobilePageZoom();
   registerServiceWorker();
-  renderShell();
-
-  const clientConfig = await loadClientConfig();
-  api.applyClientConfig(clientConfig);
 
   const hasCache = loadCache();
   if (hasCache) {
     restoreLastOpenedLedger();
+  }
+
+  renderShell();
+
+  if (hasCache) {
     renderApp();
   }
 
-  await loadRemote();
+  const clientConfig = await loadClientConfig({ cacheFirst: hasCache });
+  api.applyClientConfig(clientConfig);
+
+  remoteLoadPromise = loadRemote({ background: hasCache, silent: hasCache });
+  if (!hasCache) {
+    await remoteLoadPromise;
+  }
+
   maybeShowIosInstallTip();
 }
 
@@ -191,9 +201,10 @@ function languageSelect() {
   return select;
 }
 
-async function loadRemote() {
-  state.loading = true;
-  renderLoading();
+async function loadRemote({ background = false, silent = false } = {}) {
+  state.loading = !background;
+  state.refreshing = background;
+  if (!background) renderLoading();
   try {
     const payload = await api.bootstrap();
     setBootstrap(payload);
@@ -201,10 +212,15 @@ async function loadRemote() {
     renderShell();
     renderApp();
   } catch (error) {
-    if (!state.ready) renderLoadError(error);
-    toast(`${t("loadFailed")}: ${error.message}`, "error");
+    if (!state.ready) {
+      renderLoadError(error);
+      toast(`${t("loadFailed")}: ${error.message}`, "error");
+    } else if (!silent) {
+      toast(`${t("loadFailed")}: ${error.message}`, "error");
+    }
   } finally {
     state.loading = false;
+    state.refreshing = false;
   }
 }
 
@@ -1524,8 +1540,9 @@ async function refreshData() {
     state.view = previousView;
     state.selectedLedgerId = previousLedgerId;
     if (state.view === "ledger" && (!previousLedgerId || !getLedger(previousLedgerId))) {
-      state.view = "dashboard";
-      state.selectedLedgerId = null;
+      const fallbackLedger = getDefaultLedger();
+      state.view = fallbackLedger ? "ledger" : "dashboard";
+      state.selectedLedgerId = fallbackLedger?.id || null;
     }
     renderShell();
     renderApp();
@@ -1548,9 +1565,21 @@ async function refreshRates() {
   }
 }
 
+async function ensureFullDataForMutation() {
+  if (state.remoteReady || state.cacheMode === "full") return true;
+
+  if (remoteLoadPromise) {
+    await remoteLoadPromise;
+  }
+
+  if (state.remoteReady || state.cacheMode === "full") return true;
+  throw new Error(t("dataStillLoading"));
+}
+
 async function saveDataAndRender(shouldRender = true) {
   try {
     state.saving = true;
+    await ensureFullDataForMutation();
     toast(t("saving"));
     const payload = await api.saveData(state.data, state.dataSha);
     state.dataSha = payload.sha;
@@ -1569,6 +1598,7 @@ async function saveDataAndRender(shouldRender = true) {
 async function saveConfigAndRender() {
   try {
     state.saving = true;
+    await ensureFullDataForMutation();
     toast(t("saving"));
     const payload = await api.saveConfig(state.config, state.configSha);
     state.configSha = payload.sha;
