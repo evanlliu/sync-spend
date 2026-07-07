@@ -2354,6 +2354,162 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
   }
 }
 
+
+.settlement-modal-shell {
+  width: min(980px, 100%);
+  max-height: min(90vh, 860px);
+  max-height: min(90dvh, 860px);
+}
+
+.settlement-modal-shell .modal-head {
+  padding: 20px 24px 14px;
+}
+
+.settlement-modal-shell .settlement-modal-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 18px;
+  align-items: start;
+  scrollbar-gutter: stable;
+}
+
+.settlement-modal-shell .settlement-modal-section.current {
+  grid-column: 1;
+}
+
+.settlement-modal-shell .settlement-modal-section.history {
+  grid-column: 2;
+}
+
+.settlement-modal-shell .settlement-modal-actions {
+  grid-column: 1 / -1;
+  margin: 0 -24px;
+  padding: 14px 24px max(16px, env(safe-area-inset-bottom));
+}
+
+.settlement-modal-shell .settlement-modal-title {
+  align-items: flex-start;
+}
+
+.settlement-modal-shell .settlement-modal-title-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.settlement-modal-shell .settlement-modal-title h3 {
+  font-size: 28px;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+
+.settlement-modal-shell .settlement-modal-hint {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.settlement-modal-shell .modal-settlement-list,
+.settlement-modal-shell .settlement-history-list {
+  gap: 14px;
+}
+
+.settlement-modal-shell .modal-settlement-item {
+  padding: 18px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  box-shadow: 0 12px 28px rgba(31, 74, 168, 0.08);
+}
+
+.settlement-modal-shell .modal-settlement-item .settlement-route.compact {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.settlement-modal-shell .route-arrow-word {
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.settlement-modal-shell .settlement-transfer-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #2449b2, #2f7dff);
+  color: #fff;
+  box-shadow: 0 18px 36px rgba(36, 73, 178, 0.2);
+}
+
+.settlement-modal-shell .settlement-transfer-label {
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.settlement-modal-shell .modal-settlement-item .settlement-amount.hero {
+  justify-self: end;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 150px;
+}
+
+.settlement-modal-shell .modal-settlement-item .settlement-amount.hero small {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.settlement-modal-shell .modal-settlement-item .settlement-amount.hero strong {
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: #fff;
+}
+
+.settlement-modal-shell .settlement-history-item {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(247, 250, 255, 0.96);
+}
+
+.settlement-modal-shell .settlement-history-main strong {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.settlement-modal-shell .settlement-history-main small {
+  font-size: 13px;
+}
+
+.settlement-modal-shell .settlement-history-amount {
+  font-size: 18px;
+}
+
+@media (max-width: 1050px) {
+  .settlement-modal-shell {
+    width: min(760px, 100%);
+  }
+
+  .settlement-modal-shell .settlement-modal-body {
+    grid-template-columns: 1fr;
+  }
+
+  .settlement-modal-shell .settlement-modal-section.current,
+  .settlement-modal-shell .settlement-modal-section.history {
+    grid-column: 1;
+  }
+}
+
 /* V0.7.5 - mobile floating actions and settlement modal. PC layout remains unchanged. */
 .mobile-fab-dock {
   display: none;
