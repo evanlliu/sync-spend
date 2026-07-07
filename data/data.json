@@ -1,17 +1,18 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-07T01:36:47.445Z",
+  "updatedAt": "2026-07-07T03:11:24.634Z",
   "ledgers": [
     {
       "id": "ledger_mr9zafzz_1ulyjh510kv5j7",
       "name": "测试",
-      "archived": false,
+      "archived": true,
       "participantIds": [
         "consumer_evan",
         "consumer_mr8b5dem_r23g5l93jxnr"
       ],
       "records": [],
-      "createdAt": "2026-07-07T01:36:42.623Z"
+      "createdAt": "2026-07-07T01:36:42.623Z",
+      "updatedAt": "2026-07-07T03:11:24.083Z"
     },
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
