@@ -243,57 +243,67 @@ textarea {
   gap: 12px;
 }
 
-.ledger-switch {
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.ledger-title-switcher {
   position: relative;
   display: block;
-  width: min(760px, 100%);
-  max-width: 100%;
+  width: min(680px, 100%);
+  min-width: 0;
 }
 
-.ledger-switch-select {
-  width: 100%;
-  min-height: 52px;
-  border: 0;
-  outline: none;
-  padding: 0 48px 0 0;
-  color: var(--ink);
-  background: transparent;
-  font-size: clamp(30px, 4.2vw, 48px);
-  line-height: 1.03;
-  font-weight: 950;
-  letter-spacing: -0.055em;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-.ledger-switch-select option {
-  color: var(--ink);
-  background: #fff;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.ledger-switch-arrow {
+.ledger-title-switcher::after {
+  content: "⌄";
   position: absolute;
-  right: 4px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  display: inline-grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  color: var(--primary);
-  background: rgba(47, 101, 255, 0.1);
-  border: 1px solid rgba(47, 101, 255, 0.12);
   pointer-events: none;
-  font-size: 18px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  color: rgba(23, 32, 51, 0.72);
+  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(255, 255, 255, 0.54);
   font-weight: 900;
 }
 
-.ledger-detail .ledger-hero-summary {
+.ledger-title-select {
+  width: 100%;
+  min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  outline: none;
+  border-radius: 24px;
+  padding: 6px 58px 6px 0;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  font-size: clamp(30px, 4.2vw, 48px);
+  font-weight: 900;
+  line-height: 1.04;
+  letter-spacing: -0.055em;
+  cursor: pointer;
+}
 
+.ledger-title-select:focus-visible {
+  box-shadow: 0 0 0 4px rgba(47, 101, 255, 0.18);
+}
+
+.ledger-detail .ledger-hero-summary {
   margin-top: 2px;
   gap: 10px;
 }
@@ -1862,6 +1872,37 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
     color: #8a5a00;
     background: rgba(255, 239, 188, 0.92);
     border-color: rgba(255, 232, 168, 0.96);
+  }
+
+  .ledger-detail .ledger-hero {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .ledger-title-switcher {
+    width: 100%;
+  }
+
+  .ledger-title-switcher::after {
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    color: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+
+  .ledger-title-select {
+    max-width: 100%;
+    padding: 0 46px 0 0;
+    color: #fff;
+    font-size: clamp(24px, 7.2vw, 32px);
+    line-height: 1.05;
+    letter-spacing: -0.055em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 10px 24px rgba(16, 47, 116, 0.18);
   }
 
   .ledger-detail .ledger-hero .hero-actions {
@@ -3481,26 +3522,13 @@ input[type="datetime-local"].input {
     min-width: 0;
   }
 
-  .ledger-detail .ledger-switch {
+  .ledger-detail .ledger-hero h1 {
     width: 100%;
-  }
-
-  .ledger-detail .ledger-switch-select {
-    min-height: 42px;
-    padding-right: 40px;
-    color: #fff;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
     font-size: clamp(24px, 7.2vw, 32px);
-    line-height: 1.04;
     letter-spacing: -0.055em;
-    text-shadow: 0 10px 24px rgba(16, 47, 116, 0.18);
-  }
-
-  .ledger-detail .ledger-switch-arrow {
-    right: 0;
-    width: 32px;
-    height: 32px;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.26);
   }
 }

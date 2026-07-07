@@ -59,7 +59,7 @@ function renderShell() {
       el("div", { className: "orb orb-c" })
     ]),
     el("header", { className: `topbar glass topbar-${state.view || "dashboard"}` }, [
-      el("button", { className: "brand", on: { click: () => navigate("dashboard") } }, [
+      el("button", { className: "brand", on: { click: openMainPage } }, [
         el("img", { attrs: { src: new URL("../../assets/icons/icon-192.png", import.meta.url).toString(), alt: "" } }),
         el("span", { className: "brand-title" }, [
           el("span", { text: getAppTitle() }),
@@ -67,6 +67,7 @@ function renderShell() {
         ])
       ]),
       el("nav", { className: "top-actions" }, [
+        mainPageButton(),
         navButton("dashboard", t("dashboard")),
         navButton("settings", t("settings")),
         languageSelect()
@@ -99,6 +100,7 @@ function renderMobileFloatingActions() {
         on: { click: toggleMobileActionMenu }
       }, [el("span", { text: "•••" })]),
       el("div", { className: "mobile-action-menu glass" }, [
+        el("button", { className: `mobile-action-item ${state.view === "ledger" ? "is-active" : ""}`, text: t("mainPage"), on: { click: () => { closeMobileActionMenu(); openMainPage(); } } }),
         el("button", { className: `mobile-action-item ${state.view === "dashboard" ? "is-active" : ""}`, text: t("dashboard"), on: { click: () => { closeMobileActionMenu(); navigate("dashboard"); } } }),
         el("button", { className: `mobile-action-item ${state.view === "settings" ? "is-active" : ""}`, text: t("settings"), on: { click: () => { closeMobileActionMenu(); navigate("settings"); } } }),
         el("label", { className: "mobile-action-lang" }, [
@@ -165,6 +167,14 @@ function navButton(view, label) {
     className: `btn ghost nav-btn ${state.view === view ? "is-active" : ""}`,
     text: label,
     on: { click: () => navigate(view) }
+  });
+}
+
+function mainPageButton() {
+  return el("button", {
+    className: `btn ghost nav-btn ${state.view === "ledger" ? "is-active" : ""}`,
+    text: t("mainPage"),
+    on: { click: openMainPage }
   });
 }
 
@@ -238,7 +248,26 @@ function renderApp() {
       main.append(renderLedgerDetail(ledger));
       return;
     }
+    const fallbackLedger = getDefaultLedger();
+    if (fallbackLedger) {
+      state.view = "ledger";
+      state.selectedLedgerId = fallbackLedger.id;
+      saveLastOpenedLedgerId(fallbackLedger.id);
+      main.append(renderLedgerDetail(fallbackLedger));
+      return;
+    }
     state.view = "dashboard";
+  }
+
+  if (state.view !== "dashboard") {
+    const ledger = getDefaultLedger();
+    if (ledger) {
+      state.view = "ledger";
+      state.selectedLedgerId = ledger.id;
+      saveLastOpenedLedgerId(ledger.id);
+      main.append(renderLedgerDetail(ledger));
+      return;
+    }
   }
 
   main.append(renderDashboard());
@@ -265,11 +294,31 @@ function clearLastOpenedLedgerId(ledgerId) {
   if (!ledgerId || getLastOpenedLedgerId() === ledgerId) localStorage.removeItem(LAST_LEDGER_KEY);
 }
 
+function getDefaultLedger() {
+  const ledgers = Array.isArray(state.data?.ledgers) ? state.data.ledgers : [];
+  const last = getLastOpenedLedgerId();
+  if (last) {
+    const saved = getLedger(last);
+    if (saved) return saved;
+  }
+  return ledgers.find((ledger) => !ledger.archived) || ledgers[0] || null;
+}
+
+function openMainPage() {
+  const ledger = getDefaultLedger();
+  if (ledger) {
+    navigate("ledger", ledger.id);
+    return;
+  }
+  navigate("dashboard");
+}
+
 function restoreLastOpenedLedger() {
-  const ledgerId = getLastOpenedLedgerId();
-  if (ledgerId && getLedger(ledgerId)) {
+  const ledger = getDefaultLedger();
+  if (ledger) {
     state.view = "ledger";
-    state.selectedLedgerId = ledgerId;
+    state.selectedLedgerId = ledger.id;
+    saveLastOpenedLedgerId(ledger.id);
     return true;
   }
   state.view = "dashboard";
@@ -382,7 +431,7 @@ function renderLedgerDetail(ledger) {
   return el("section", { className: "ledger-detail" }, [
     el("div", { className: "hero glass ledger-hero" }, [
       el("div", { className: "ledger-hero-main" }, [
-        renderLedgerSwitch(ledger),
+        renderLedgerSwitcher(ledger),
         renderLedgerHeroSummary(summary)
       ]),
       el("div", { className: "hero-actions" }, [
@@ -401,27 +450,37 @@ function renderLedgerDetail(ledger) {
 }
 
 
-function renderLedgerSwitch(ledger) {
-  const ledgers = (state.data.ledgers || []).slice();
+
+function renderLedgerSwitcher(currentLedger) {
   const select = el("select", {
-    className: "ledger-switch-select",
-    attrs: { name: "ledgerSwitch", "aria-label": t("switchLedger") },
-    on: {
-      change: (event) => {
-        const nextId = event.target.value;
-        if (nextId && nextId !== ledger.id) navigate("ledger", nextId);
-      }
-    }
+    className: "ledger-title-select",
+    attrs: { "aria-label": t("switchLedger") }
   });
 
-  for (const item of ledgers) {
-    const label = item.archived ? `${item.name} · ${t("archived")}` : item.name;
-    select.append(el("option", { text: label, attrs: { value: item.id, selected: item.id === ledger.id } }));
-  }
+  const ledgers = Array.isArray(state.data?.ledgers) ? state.data.ledgers : [];
+  const active = ledgers.filter((ledger) => !ledger.archived);
+  const archived = ledgers.filter((ledger) => ledger.archived);
 
-  return el("label", { className: "ledger-switch" }, [
-    select,
-    el("span", { className: "ledger-switch-arrow", text: "⌄" })
+  const appendOptions = (items, suffix = "") => {
+    for (const ledger of items) {
+      select.append(el("option", {
+        text: `${ledger.name}${suffix}`,
+        attrs: { value: ledger.id, selected: ledger.id === currentLedger.id }
+      }));
+    }
+  };
+
+  appendOptions(active);
+  appendOptions(archived, ` · ${t("archived")}`);
+
+  select.addEventListener("change", () => {
+    const ledgerId = select.value;
+    if (ledgerId && ledgerId !== currentLedger.id) navigate("ledger", ledgerId);
+  });
+
+  return el("label", { className: "ledger-title-switcher" }, [
+    el("span", { className: "sr-only", text: t("switchLedger") }),
+    select
   ]);
 }
 
@@ -1422,8 +1481,10 @@ async function deleteArchivedLedger(ledgerId) {
   clearLastOpenedLedgerId(ledgerId);
 
   if (state.selectedLedgerId === ledgerId) {
-    state.view = "dashboard";
-    state.selectedLedgerId = null;
+    const fallbackLedger = getDefaultLedger();
+    state.view = fallbackLedger ? "ledger" : "dashboard";
+    state.selectedLedgerId = fallbackLedger?.id || null;
+    if (fallbackLedger) saveLastOpenedLedgerId(fallbackLedger.id);
   }
 
   await saveDataAndRender(false);
