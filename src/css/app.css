@@ -1737,11 +1737,13 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
     max-width: 100%;
     margin: 2px 0 0;
     color: #fff;
-    font-size: clamp(28px, 8vw, 38px);
-    line-height: 1.05;
+    font-size: clamp(24px, 6.7vw, 34px);
+    line-height: 1.04;
     letter-spacing: -0.05em;
     text-shadow: 0 10px 24px rgba(16, 47, 116, 0.18);
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .ledger-detail .ledger-hero .muted {
@@ -1753,26 +1755,63 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
 
   .ledger-detail .ledger-hero-summary {
     margin-top: 6px;
-    gap: 8px;
+    gap: 10px;
+    padding: 12px 12px 10px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .ledger-detail .ledger-hero-summary-main {
+    gap: 6px;
   }
 
   .ledger-detail .ledger-hero-summary-label {
     font-size: 12px;
+    color: rgba(255, 255, 255, 0.96);
+    font-weight: 800;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
   }
 
   .ledger-detail .ledger-hero-summary-total {
     font-size: clamp(26px, 10vw, 44px);
+    color: #142547;
+    text-shadow: none;
+  }
+
+  .ledger-detail .ledger-hero .currency-totals.compact {
+    gap: 7px;
+    color: rgba(255, 255, 255, 0.96);
+  }
+
+  .ledger-detail .ledger-hero .currency-totals.compact > span {
+    font-size: 12px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.96);
   }
 
   .ledger-detail .ledger-hero-summary-foot {
-    gap: 6px;
+    gap: 7px;
   }
 
   .ledger-detail .ledger-hero-summary-meta,
   .ledger-detail .ledger-hero .currency-totals.compact .currency-total-pill {
-    min-height: 25px;
-    padding: 0 9px;
+    min-height: 27px;
+    padding: 0 10px;
     font-size: 12px;
+    font-weight: 800;
+    color: #1b2f52;
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 8px 18px rgba(26, 49, 92, 0.08);
+  }
+
+  .ledger-detail .ledger-hero-summary-meta.warn {
+    color: #8a5a00;
+    background: rgba(255, 239, 188, 0.92);
+    border-color: rgba(255, 232, 168, 0.96);
   }
 
   .ledger-detail .ledger-hero .hero-actions {
