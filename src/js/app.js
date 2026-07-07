@@ -382,7 +382,7 @@ function renderLedgerDetail(ledger) {
   return el("section", { className: "ledger-detail" }, [
     el("div", { className: "hero glass ledger-hero" }, [
       el("div", { className: "ledger-hero-main" }, [
-        el("h1", { text: ledger.name }),
+        renderLedgerSwitch(ledger),
         renderLedgerHeroSummary(summary)
       ]),
       el("div", { className: "hero-actions" }, [
@@ -400,6 +400,30 @@ function renderLedgerDetail(ledger) {
   ]);
 }
 
+
+function renderLedgerSwitch(ledger) {
+  const ledgers = (state.data.ledgers || []).slice();
+  const select = el("select", {
+    className: "ledger-switch-select",
+    attrs: { name: "ledgerSwitch", "aria-label": t("switchLedger") },
+    on: {
+      change: (event) => {
+        const nextId = event.target.value;
+        if (nextId && nextId !== ledger.id) navigate("ledger", nextId);
+      }
+    }
+  });
+
+  for (const item of ledgers) {
+    const label = item.archived ? `${item.name} · ${t("archived")}` : item.name;
+    select.append(el("option", { text: label, attrs: { value: item.id, selected: item.id === ledger.id } }));
+  }
+
+  return el("label", { className: "ledger-switch" }, [
+    select,
+    el("span", { className: "ledger-switch-arrow", text: "⌄" })
+  ]);
+}
 
 function renderLedgerHeroSummary(summary) {
   return el("div", { className: "ledger-hero-summary" }, [

@@ -243,7 +243,57 @@ textarea {
   gap: 12px;
 }
 
+.ledger-switch {
+  position: relative;
+  display: block;
+  width: min(760px, 100%);
+  max-width: 100%;
+}
+
+.ledger-switch-select {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  outline: none;
+  padding: 0 48px 0 0;
+  color: var(--ink);
+  background: transparent;
+  font-size: clamp(30px, 4.2vw, 48px);
+  line-height: 1.03;
+  font-weight: 950;
+  letter-spacing: -0.055em;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.ledger-switch-select option {
+  color: var(--ink);
+  background: #fff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ledger-switch-arrow {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: var(--primary);
+  background: rgba(47, 101, 255, 0.1);
+  border: 1px solid rgba(47, 101, 255, 0.12);
+  pointer-events: none;
+  font-size: 18px;
+  font-weight: 900;
+}
+
 .ledger-detail .ledger-hero-summary {
+
   margin-top: 2px;
   gap: 10px;
 }
@@ -3431,13 +3481,26 @@ input[type="datetime-local"].input {
     min-width: 0;
   }
 
-  .ledger-detail .ledger-hero h1 {
+  .ledger-detail .ledger-switch {
     width: 100%;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: visible;
-    text-overflow: clip;
+  }
+
+  .ledger-detail .ledger-switch-select {
+    min-height: 42px;
+    padding-right: 40px;
+    color: #fff;
     font-size: clamp(24px, 7.2vw, 32px);
+    line-height: 1.04;
     letter-spacing: -0.055em;
+    text-shadow: 0 10px 24px rgba(16, 47, 116, 0.18);
+  }
+
+  .ledger-detail .ledger-switch-arrow {
+    right: 0;
+    width: 32px;
+    height: 32px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.26);
   }
 }
