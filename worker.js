@@ -22,7 +22,7 @@
  * V0.7.4: 移动端隐藏应收/应付卡片，新增记账改为悬浮图片按钮。
  * V0.7.8: 移除前端密码弹窗，强制使用 config.json 的 accessPassword。
  * V0.7.9: 修复 data.json 超过 1MB 后 GitHub Contents API content 为空导致加载失败。
- * V0.8.0: 移动端账本头部和编辑账本弹窗优化。
+ * V0.8.1: 移动端账本头部和编辑账本弹窗优化。
  */
 
 const JSON_HEADERS = {
@@ -51,7 +51,7 @@ async function handleApiRequest(context) {
       return json({
         ok: true,
         app: "sync-spend",
-        version: "0.8.0",
+        version: "0.8.1",
         mode: "single-file-worker",
         hasPassword: Boolean(env.APP_PASSWORD),
         hasGithubToken: Boolean(env.GH_TOKEN),

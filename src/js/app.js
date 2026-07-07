@@ -382,7 +382,8 @@ function renderLedgerDetail(ledger) {
   return el("section", { className: "ledger-detail" }, [
     el("div", { className: "hero glass ledger-hero" }, [
       el("div", { className: "ledger-hero-main" }, [
-        el("h1", { text: ledger.name })
+        el("h1", { text: ledger.name }),
+        renderLedgerHeroSummary(summary)
       ]),
       el("div", { className: "hero-actions" }, [
         el("button", { className: "btn settle", text: t("settleNow"), on: { click: () => showSettlementModal(ledger, summary) } }),
@@ -393,20 +394,28 @@ function renderLedgerDetail(ledger) {
       ])
     ]),
     el("div", { className: "summary-grid summary-grid-no-settlement" }, [
-      el("article", { className: "glass card total-card" }, [
-        el("h2", { text: t("total") }),
-        el("div", { className: "big-number", text: money(summary.totalCny, "CNY") }),
-        renderCurrencyTotals(summary),
-        el("p", { className: "muted", text: `${t("perPerson")}: ${money(summary.perPerson, "CNY")}` }),
-        summary.unallocatedCny > 0.01 ? el("p", { className: "hint warn", text: `${t("unallocated")}: ${money(summary.unallocatedCny, "CNY")}` }) : null
-      ]),
       renderBalances(summary)
     ]),
     renderRecords(ledger, summary.records)
   ]);
 }
 
-function renderCurrencyTotals(summary) {
+
+function renderLedgerHeroSummary(summary) {
+  return el("div", { className: "ledger-hero-summary" }, [
+    el("div", { className: "ledger-hero-summary-main" }, [
+      el("span", { className: "ledger-hero-summary-label", text: t("total") }),
+      el("strong", { className: "ledger-hero-summary-total", text: money(summary.totalCny, "CNY") })
+    ]),
+    renderCurrencyTotals(summary, true),
+    el("div", { className: "ledger-hero-summary-foot" }, [
+      el("span", { className: "ledger-hero-summary-meta", text: `${t("perPerson")}: ${money(summary.perPerson, "CNY")}` }),
+      summary.unallocatedCny > 0.01 ? el("span", { className: "ledger-hero-summary-meta warn", text: `${t("unallocated")}: ${money(summary.unallocatedCny, "CNY")}` }) : null
+    ])
+  ]);
+}
+
+function renderCurrencyTotals(summary, compact = false) {
   const entries = Object.entries(summary.totalByCurrency || {})
     .filter(([, value]) => Math.abs(Number(value || 0)) > 0.001)
     .sort(([a], [b]) => {
@@ -415,9 +424,9 @@ function renderCurrencyTotals(summary) {
       return a.localeCompare(b);
     });
 
-  if (!entries.length) return el("p", { className: "muted currency-totals-empty", text: `${t("currencyTotals")}: -` });
+  if (!entries.length) return el("p", { className: `muted currency-totals-empty${compact ? " compact" : ""}`, text: `${t("currencyTotals")}: -` });
 
-  return el("div", { className: "currency-totals" }, [
+  return el("div", { className: `currency-totals${compact ? " compact" : ""}` }, [
     el("span", { text: t("currencyTotals") }),
     el("div", { className: "currency-total-list" }, entries.map(([currency, value]) => (
       el("strong", { className: "currency-total-pill", text: money(value, currency) })
@@ -806,6 +815,13 @@ function showLedgerModal(ledger = null) {
       ]),
       field(t("ledgerName"), nameInput)
     ]),
+    el("section", { className: "ledger-form-section ledger-form-participants" }, [
+      el("div", { className: "ledger-form-section-title" }, [
+        el("strong", { text: t("participants") }),
+        el("span", { text: t("participantsHint") })
+      ]),
+      checks
+    ]),
     editing ? el("section", { className: "ledger-form-section ledger-form-time" }, [
       el("div", { className: "ledger-form-section-title" }, [
         el("strong", { text: t("ledgerTimeInfo") }),
@@ -822,13 +838,6 @@ function showLedgerModal(ledger = null) {
         ])
       ])
     ]) : null,
-    el("section", { className: "ledger-form-section ledger-form-participants" }, [
-      el("div", { className: "ledger-form-section-title" }, [
-        el("strong", { text: t("participants") }),
-        el("span", { text: t("participantsHint") })
-      ]),
-      checks
-    ]),
     modalActions()
   ];
 
