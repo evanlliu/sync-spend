@@ -231,6 +231,53 @@ textarea {
   min-width: 0;
 }
 
+.ledger-detail .ledger-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 20px;
+}
+
+.ledger-detail .ledger-hero-main {
+  display: grid;
+  gap: 12px;
+}
+
+.ledger-detail .ledger-hero-summary {
+  margin-top: 2px;
+  gap: 10px;
+}
+
+.ledger-detail .ledger-hero-summary-label {
+  color: #7c8aa5;
+}
+
+.ledger-detail .ledger-hero-summary-total {
+  color: var(--ink);
+}
+
+.ledger-detail .ledger-hero-summary-meta {
+  background: rgba(47, 101, 255, 0.08);
+  border-color: rgba(47, 101, 255, 0.14);
+  color: #315ec9;
+}
+
+.ledger-detail .ledger-hero-summary-meta.warn {
+  background: rgba(255, 214, 102, 0.18);
+  border-color: rgba(255, 214, 102, 0.26);
+  color: #8a5a00;
+}
+
+.ledger-detail .ledger-hero .currency-totals.compact {
+  color: #7c8aa5;
+}
+
+.ledger-detail .ledger-hero .currency-totals.compact .currency-total-pill {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(23, 32, 51, 0.08);
+}
+
 .ledger-hero-summary {
   display: grid;
   gap: 10px;
@@ -2516,7 +2563,7 @@ html[lang="en-US"] .collapsible-card[open] .collapsible-summary::after {
 }
 
 .summary-grid-no-settlement {
-  grid-template-columns: minmax(260px, 0.8fr) minmax(520px, 1.6fr);
+  grid-template-columns: 1fr;
 }
 
 .settlement-modal-body {
