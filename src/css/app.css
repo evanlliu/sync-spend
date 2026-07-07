@@ -3414,3 +3414,30 @@ input[type="datetime-local"].input {
     padding: 8px 10px;
   }
 }
+
+/* V0.8.5 - mobile ledger title width fix. */
+@media (max-width: 760px) {
+  .ledger-detail .ledger-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .ledger-detail .ledger-hero-main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .ledger-detail .ledger-hero h1 {
+    width: 100%;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: clamp(24px, 7.2vw, 32px);
+    letter-spacing: -0.055em;
+  }
+}

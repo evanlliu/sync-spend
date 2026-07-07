@@ -1,4 +1,4 @@
-# Sync Spend v0.8.4
+# Sync Spend v0.8.5
 
 PWA 多人记账本，前端部署在 GitHub，后端只需要在 Cloudflare 发布一个 `worker.js`。
 
@@ -364,7 +364,7 @@ Deployment failed, try again later.
 - 启动时会清理旧版本遗留的 `syncSpend.password`，避免新设备乱输密码后本机持续 401。
 
 
-## 21. V0.8.4 更新点
+## 21. V0.8.5 更新点
 
 - 移动端打开具体账本时隐藏顶部“同步记账 + 版本号”品牌块，只在账本首页显示。
 - 账本详情页不再显示创建时间，避免挤占结算按钮区域。
