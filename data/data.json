@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-08T05:48:46.505Z",
+  "updatedAt": "2026-07-08T05:49:03.914Z",
   "ledgers": [
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
@@ -30,14 +30,20 @@
           "photo": null,
           "createdAt": "2026-07-08T05:48:26.983Z",
           "type": "expense",
-          "updatedAt": "2026-07-08T05:48:45.316Z",
+          "updatedAt": "2026-07-08T05:49:02.410Z",
           "history": [
             {
               "action": "created",
               "at": "2026-07-08T05:48:45.316Z",
               "summary": "刘彬 $500.00 / ¥194.65"
+            },
+            {
+              "action": "deleted",
+              "at": "2026-07-08T05:49:02.410Z",
+              "summary": "刘彬 $500.00 / ¥194.65"
             }
-          ]
+          ],
+          "deleted": true
         },
         {
           "id": "record_mrbd6akq_v4cums18zd4m3",
