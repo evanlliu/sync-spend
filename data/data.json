@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-16T18:32:44.679Z",
+  "updatedAt": "2026-08-16T20:39:05.076Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -118,7 +118,7 @@
           "deleted": true
         },
         {
-          "id": "record_msw4nbzm_3gg1k51nqv6qe",
+          "id": "record_msw4nbzm_3gg1k51nqv6qe__repair2",
           "date": "2026-08-16",
           "consumerId": "consumer_msw4kcs7_1yqf17i36l1ee",
           "amount": 100,
@@ -137,18 +137,30 @@
           "photo": null,
           "createdAt": "2026-08-16T18:17:20.242Z",
           "type": "expense",
-          "updatedAt": "2026-08-16T18:17:42.408Z",
+          "updatedAt": "2026-08-16T20:39:05.069Z",
           "history": [
             {
               "action": "created",
               "at": "2026-08-16T18:17:42.408Z",
               "summary": "周孝双 $100.00 / ¥39.61"
+            },
+            {
+              "action": "id_repaired",
+              "at": "2026-08-16T20:39:00.347Z",
+              "summary": "自动修复重复记录 ID: record_msw4nbzm_3gg1k51nqv6qe → record_msw4nbzm_3gg1k51nqv6qe__repair2"
+            },
+            {
+              "action": "deleted",
+              "at": "2026-08-16T20:39:05.069Z",
+              "summary": "周孝双 $100.00 / ¥39.61"
             }
-          ]
+          ],
+          "deleted": true,
+          "deletedAt": "2026-08-16T20:39:05.069Z"
         }
       ],
       "createdAt": "2026-08-16T18:16:15.021Z",
-      "updatedAt": "2026-08-16T18:32:04.457Z"
+      "updatedAt": "2026-08-16T20:39:05.069Z"
     },
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
