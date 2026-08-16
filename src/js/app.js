@@ -106,6 +106,11 @@ function renderMobileFloatingActions() {
       el("span", { className: "mobile-add-fab-icon" }),
       el("span", { className: "mobile-add-fab-plus", text: "+" })
     ]) : null,
+    ledger ? el("button", {
+      className: "mobile-fab mobile-refresh-fab",
+      attrs: { type: "button", "aria-label": t("refreshData"), title: t("refreshData") },
+      on: { click: refreshData }
+    }, [el("span", { className: "mobile-refresh-icon", text: "↻" })]) : null,
     el("div", { className: "mobile-more-wrap" }, [
       el("button", {
         className: "mobile-fab mobile-more-fab",
@@ -458,6 +463,7 @@ function renderLedgerDetail(ledger) {
         renderLedgerHeroSummary(summary)
       ]),
       el("div", { className: "hero-actions" }, [
+        el("button", { className: "btn ghost ledger-refresh-btn", text: t("refreshData"), on: { click: refreshData } }),
         el("button", { className: "btn settle", text: t("settleNow"), on: { click: () => showSettlementModal(ledger) } }),
         el("button", { className: "btn primary", text: t("addExpense"), on: { click: () => showExpenseModal(ledger) } }),
         el("button", { className: "btn ghost", text: t("edit"), on: { click: () => showLedgerModal(ledger) } }),
@@ -1341,6 +1347,17 @@ async function showExpenseModal(ledger, record = null) {
   }
 
   async function fetchLiveRateForForm(showToast) {
+    if (showToast && (state.saving || state.refreshing)) {
+      toast(t("operationInProgress"), "error");
+      return;
+    }
+
+    let operationId = 0;
+    if (showToast) {
+      state.refreshing = true;
+      operationId = showOperation(t("refreshingRates"));
+    }
+
     try {
       const payload = await api.refreshRates();
       state.rates = payload.rates;
@@ -1358,6 +1375,11 @@ async function showExpenseModal(ledger, record = null) {
       }
     } catch (error) {
       if (showToast) toast(`${t("loadFailed")}: ${error.message}`, "error");
+    } finally {
+      if (showToast) {
+        state.refreshing = false;
+        if (operationId) hideOperation(operationId);
+      }
     }
   }
 
@@ -1750,7 +1772,7 @@ async function createSettlementRecords(ledgerOrId) {
     ledger.records.unshift(...records);
     ledger.updatedAt = now;
     createdCount = records.length;
-  });
+  }, { busyText: t("settling"), deferBusyUntilMutation: true });
 
   if (!saved) return;
   closeModal();
@@ -1775,7 +1797,7 @@ async function deleteArchivedLedger(ledgerId) {
       transaction.afterCommit(() => api.deleteMediaFile(attachment.path, attachment.sha, `sync-spend: delete media for ledger ${ledgerId}`));
     }
     nextData.ledgers = nextData.ledgers.filter((item) => item.id !== ledgerId);
-  }, { render: false });
+  }, { render: false, busyText: t("deleting"), deferBusyUntilMutation: true });
 
   if (!saved) return;
   clearLastOpenedLedgerId(ledgerId);
@@ -1809,7 +1831,7 @@ async function deleteRecord(ledgerId, recordId) {
     record.updatedAt = now;
     appendRecordHistory(record, "deleted", expenseHistorySummary(record), now);
     ledger.updatedAt = now;
-  });
+  }, { busyText: t("deleting"), deferBusyUntilMutation: true });
 }
 
 async function handleConsumerRemoval(consumerId) {
@@ -1828,19 +1850,20 @@ async function handleConsumerRemoval(consumerId) {
 
     if (!confirm(t("confirmDeleteUnusedConsumer"))) return false;
     nextConfig.consumers = nextConfig.consumers.filter((item) => item.id !== consumerId);
-  });
+  }, { busyText: t("deleting"), deferBusyUntilMutation: true });
 }
 
 async function refreshData() {
-  if (state.saving) {
+  if (state.saving || state.refreshing) {
     toast(t("operationInProgress"), "error");
     return;
   }
 
+  state.refreshing = true;
+  const operationId = showOperation(t("refreshing"));
   const previousView = state.view;
   const previousLedgerId = state.selectedLedgerId;
   try {
-    toast(t("refreshingData"));
     const payload = await api.bootstrap();
     setBootstrap(payload);
     state.view = previousView;
@@ -1855,10 +1878,20 @@ async function refreshData() {
     toast(t("updated"), "success");
   } catch (error) {
     toast(`${t("loadFailed")}: ${error.message}`, "error");
+  } finally {
+    state.refreshing = false;
+    if (operationId) hideOperation(operationId);
   }
 }
 
 async function refreshRates() {
+  if (state.saving || state.refreshing) {
+    toast(t("operationInProgress"), "error");
+    return;
+  }
+
+  state.refreshing = true;
+  const operationId = showOperation(t("refreshingRates"));
   try {
     const payload = await api.refreshRates();
     state.rates = payload.rates;
@@ -1871,6 +1904,9 @@ async function refreshRates() {
     toast(t("updated"), "success");
   } catch (error) {
     toast(`${t("loadFailed")}: ${error.message}`, "error");
+  } finally {
+    state.refreshing = false;
+    hideOperation(operationId);
   }
 }
 
@@ -1920,13 +1956,14 @@ async function ensureFullDataForMutation() {
   throw new Error(t("dataStillLoading"));
 }
 
-async function commitDataMutation(mutator, { render = true } = {}) {
-  if (state.saving) {
+async function commitDataMutation(mutator, { render = true, busyText = null, deferBusyUntilMutation = false } = {}) {
+  if (state.saving || state.refreshing) {
     toast(t("operationInProgress"), "error");
     return false;
   }
 
   state.saving = true;
+  let operationId = deferBusyUntilMutation ? 0 : showOperation(busyText || t("saving"));
   const rollbackTasks = [];
   const afterCommitTasks = [];
   const transaction = {
@@ -1942,6 +1979,7 @@ async function commitDataMutation(mutator, { render = true } = {}) {
       await runRemoteTasks(rollbackTasks, { reverse: true, silent: true });
       return false;
     }
+    if (!operationId) operationId = showOperation(busyText || t("saving"));
 
     const payload = await api.saveData(nextData, state.dataSha);
     const savedData = payload.data || nextData;
@@ -1965,6 +2003,7 @@ async function commitDataMutation(mutator, { render = true } = {}) {
     return false;
   } finally {
     state.saving = false;
+    hideOperation(operationId);
   }
 }
 
@@ -1982,18 +2021,20 @@ async function runRemoteTasks(tasks, { reverse = false, silent = false } = {}) {
   return errors;
 }
 
-async function commitConfigMutation(mutator, { render = true } = {}) {
-  if (state.saving) {
+async function commitConfigMutation(mutator, { render = true, busyText = null, deferBusyUntilMutation = false } = {}) {
+  if (state.saving || state.refreshing) {
     toast(t("operationInProgress"), "error");
     return false;
   }
 
   state.saving = true;
+  let operationId = deferBusyUntilMutation ? 0 : showOperation(busyText || t("saving"));
   try {
     await ensureFullDataForMutation();
     const nextConfig = clone(state.config);
     const mutationResult = await mutator(nextConfig);
     if (mutationResult === false) return false;
+    if (!operationId) operationId = showOperation(busyText || t("saving"));
 
     const payload = await api.saveConfig(nextConfig, state.configSha);
     state.config = nextConfig;
@@ -2009,7 +2050,49 @@ async function commitConfigMutation(mutator, { render = true } = {}) {
     return false;
   } finally {
     state.saving = false;
+    if (operationId) hideOperation(operationId);
   }
+}
+
+let operationSequence = 0;
+let activeOperationId = 0;
+let operationOverlay = null;
+
+function showOperation(message) {
+  const operationId = ++operationSequence;
+  activeOperationId = operationId;
+
+  if (!operationOverlay || !operationOverlay.isConnected) {
+    operationOverlay = el("div", {
+      className: "operation-overlay",
+      attrs: { role: "status", "aria-live": "assertive", "aria-busy": "true" }
+    }, [
+      el("div", { className: "operation-card glass" }, [
+        el("span", { className: "operation-spinner", attrs: { "aria-hidden": "true" } }),
+        el("strong", { className: "operation-message" })
+      ])
+    ]);
+    document.body.append(operationOverlay);
+  }
+
+  const messageNode = operationOverlay.querySelector(".operation-message");
+  if (messageNode) messageNode.textContent = message || t("processing");
+  operationOverlay.classList.add("is-visible");
+  operationOverlay.setAttribute("aria-busy", "true");
+  document.body.classList.add("is-operation-busy");
+  if (app) app.inert = true;
+  if (modalRoot) modalRoot.inert = true;
+  return operationId;
+}
+
+function hideOperation(operationId) {
+  if (operationId !== activeOperationId) return;
+  activeOperationId = 0;
+  operationOverlay?.classList.remove("is-visible");
+  operationOverlay?.setAttribute("aria-busy", "false");
+  document.body.classList.remove("is-operation-busy");
+  if (app) app.inert = false;
+  if (modalRoot) modalRoot.inert = false;
 }
 
 function toast(message, type = "info") {

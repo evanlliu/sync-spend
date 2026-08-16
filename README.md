@@ -1,4 +1,4 @@
-# Sync Spend v0.9.6
+# Sync Spend v0.9.7
 
 Sync Spend 是一个部署在 GitHub Pages 的多人记账 PWA。浏览器直接调用 GitHub REST Contents API 读写 `data` 分支，不再使用 Cloudflare Worker。
 
@@ -64,7 +64,16 @@ data 分支
 
 `imageMaxWidth` 实际作为最长边限制；浏览器会优先压缩为 WebP，必要时回退 JPEG，并尽量控制在约 950KB、硬上限 1MB 内。
 
-## 4. 图片存储（v0.9.6）
+## 4. 主页面刷新与操作反馈（v0.9.7）
+
+- PC 账本主页面的操作区新增“刷新数据”，固定放在“结算”按钮之前；点击后重新从 GitHub 读取最新 `data/data.json` 和 `data/config.json`。
+- 移动端账本页面的悬浮操作区按“新增 → 刷新 → 更多”从上到下排列，“刷新”固定在“更多”正上方。
+- 所有远端写操作统一显示阻塞式操作状态：普通新增/编辑/归档显示“保存中...”，删除显示“删除中...”，生成结算记录显示“结算中...”。
+- 删除、停用消费者、永久删除账本、结算等带原生确认框的动作，只在用户确认后显示操作状态；取消不会闪现处理中状态。
+- 数据刷新、汇率刷新以及记账弹窗内显式“获取实时汇率”均显示对应刷新状态。
+- 操作状态与真实异步请求生命周期绑定，并暂时锁住页面交互，防止重复点击造成并发双写；成功或失败后自动解除。
+
+## 5. 图片存储（v0.9.6）
 
 v0.9.6 起 **图片本体不再写进 `data.json`**。新增/编辑消费时：
 
@@ -110,7 +119,7 @@ v0.9.6 起 **图片本体不再写进 `data.json`**。新增/编辑消费时：
 
 当前没有历史 Base64 图片需要迁移，因此本版本不实现旧图片迁移 UI；保存任何记录时旧 `photo` 字段都会被丢弃。
 
-## 5. GitHub 读写与并发
+## 6. GitHub 读写与并发
 
 `src/js/api.js`：
 
@@ -122,7 +131,7 @@ v0.9.6 起 **图片本体不再写进 `data.json`**。新增/编辑消费时：
 - `deleteMediaFile()` 使用附件保存的 Git blob SHA 删除；没有 SHA 时才重新读取文件 metadata。
 - 数据 mutation 使用 clone → GitHub PUT → 成功后替换 state；失败不污染页面内存。
 
-## 6. 删除规则
+## 7. 删除规则
 
 - expense / settlement：软删除，写 `deleted:true`、`deletedAt`、history；立即退出统计和结算。
 - 消费者：只要被账本或历史记录引用就不能物理删除，只能停用；完全未引用才永久删除。
@@ -130,7 +139,7 @@ v0.9.6 起 **图片本体不再写进 `data.json`**。新增/编辑消费时：
 - 删除/移除当前参与人不能改变历史 `splitParticipantIds`、付款、分摊或 settlement 语义。
 - 历史重复/缺失 ledger/record ID 由 `migrateDataIntegrity()` 无损修复，API 保存前唯一性校验继续保留。
 
-## 7. 汇率
+## 8. 汇率
 
 Frankfurter v2 使用：
 
@@ -140,16 +149,16 @@ https://api.frankfurter.dev/v2/rates?base=CNY&quotes=MXN,TRY
 
 禁止追加 `_ts` 等未知参数；禁缓存只使用 `fetch(..., { cache: "no-store" })`。历史 expense 固化当次 `rateToCny` 和 `amountCny`，以后实时汇率变化不会重算历史账。
 
-## 8. PWA 与本地缓存
+## 9. PWA 与本地缓存
 
-- Service Worker：`sync-spend-shell-v096`。
+- Service Worker：`sync-spend-shell-v097`。
 - App Shell 在线 network-first，断网时只允许静态外壳回退。
 - GitHub / Frankfurter 跨域请求不进入 Service Worker Cache Storage。
 - Pages `data/config.json` / `data/data.json` network-only，不回退旧缓存。
 - localStorage 只保留语言、最后打开账本、最后币种、安装提示等 UI 偏好。
 - 禁止重新把业务 data/config/rates/SHA 放回 localStorage。
 
-## 9. 本地运行与检查
+## 10. 本地运行与检查
 
 不要直接双击 `index.html`；ES Modules 应通过 HTTP 服务运行，例如：
 
@@ -165,17 +174,17 @@ py -m http.server 8080
 npm run check
 ```
 
-当前 30 项 `node:test` 回归全部通过：8 calculator + 12 API/media + 3 crypto + 4 migration + 3 cache-policy。
+当前 33 项 `node:test` 回归全部通过：8 calculator + 12 API/media + 3 crypto + 4 migration + 3 cache-policy + 3 UI actions。
 
-## 10. 发布
+## 11. 发布
 
 1. 将完整项目发布到 GitHub Pages 当前分支 `release1` 根目录。
 2. `release1/data/config.json` 保持 DES 密文 Token；不要提交 PAT 明文。
 3. GitHub Pages Source 指向 `release1 / (root)`。
 4. 业务连接配置中的 `"branch": "data"` **不要改成 `release1`**；它指的是账务数据分支。
-5. 首次发布新版本后强制刷新一次，确认页面显示 `v0.9.6`。
+5. 首次发布新版本后强制刷新一次，确认页面显示 `v0.9.7`。
 
-## 11. 主要文件
+## 12. 主要文件
 
 ```text
 src/js/app.js         UI、CRUD、图片事务流程

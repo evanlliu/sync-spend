@@ -3532,3 +3532,112 @@ input[type="datetime-local"].input {
     letter-spacing: -0.055em;
   }
 }
+
+/* V0.9.7 - explicit refresh actions and global operation feedback. */
+.operation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  background: rgba(238, 244, 255, 0.24);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  transition: opacity 0.16s ease, visibility 0s linear 0.16s;
+}
+
+.operation-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.operation-card {
+  min-width: 168px;
+  max-width: min(360px, calc(100vw - 40px));
+  min-height: 72px;
+  padding: 14px 20px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 22px 60px rgba(27, 56, 118, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+}
+
+.operation-message {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.operation-spinner {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 999px;
+  border: 3px solid rgba(47, 101, 255, 0.18);
+  border-top-color: var(--primary);
+  animation: sync-spend-operation-spin 0.72s linear infinite;
+}
+
+@keyframes sync-spend-operation-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mobile-refresh-fab {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .ledger-detail .ledger-hero .hero-actions .ledger-refresh-btn {
+    display: none !important;
+  }
+
+  .mobile-add-fab {
+    order: 1;
+  }
+
+  .mobile-refresh-fab {
+    order: 2;
+    display: grid;
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .mobile-refresh-icon {
+    display: inline-block;
+    font-size: 31px;
+    font-weight: 800;
+    line-height: 1;
+    transform: translateY(-1px);
+  }
+
+  .mobile-more-wrap {
+    order: 3;
+  }
+
+  .operation-overlay {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .operation-card {
+    min-width: 154px;
+    min-height: 66px;
+    border-radius: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operation-spinner {
+    animation-duration: 1.4s;
+  }
+}

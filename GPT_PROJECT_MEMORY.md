@@ -7,7 +7,7 @@
 ## 0. 当前基线
 
 - 项目：Sync Spend
-- 当前版本：`0.9.6`
+- 当前版本：`0.9.7`
 - 本次架构更新时间：2026-08-16
 - 原始附件基线 SHA-256：`ab80654846c9c66f1f42b70a82981fa939fb44f1069dbb7958800bbee00be08c`
 - 技术栈：Vanilla JavaScript ES Modules + CSS + PWA
@@ -22,11 +22,23 @@
 - 前端连接配置：当前 Pages 发布分支 `release1/data/config.json`（代码使用相对路径，因此换发布分支无需改业务代码）
 - 主货币：CNY
 - 汇率：浏览器直接请求 Frankfurter API
-- 自动化测试：Node 内置 `node:test`；`npm run check` = Service Worker + 全部前端 JS 语法检查 + `tests/*.test.mjs` 核心回归（当前 30 项）
+- 自动化测试：Node 内置 `node:test`；`npm run check` = Service Worker + 全部前端 JS 语法检查 + `tests/*.test.mjs` 核心回归（当前 33 项）
 
-### v0.9.6 当前开发重点
+### v0.9.7 当前开发重点
 
-在 v0.9.5 “每次加载只认 GitHub 最新业务数据”基线上，v0.9.6 的核心要求是：**图片本体从 `data.json` 外置为 data 分支独立 media 文件，JSON 只保留附件元数据；不实现旧 Base64 图片迁移，因为用户确认线上尚未上传图片。**
+在 v0.9.6 “图片本体外置到 GitHub media、data.json 只保存附件元数据”的基线上，v0.9.7 的核心要求是：**主页面提供明确的手动刷新入口，并为所有远端操作提供真实、可见、阻塞重复点击的处理中反馈。**
+
+- PC 账本主页面 `hero-actions` 新增“刷新数据”，顺序固定为：刷新数据 → 结算 → 新增记账记录 → 编辑 → 归档/删除。
+- 移动端账本悬浮区固定从上到下：新增 FAB → 刷新 FAB → 更多 FAB；刷新必须直接位于“更多”正上方。刷新 FAB 只在账本主页面出现，避免其他页面重复入口。
+- `showOperation()/hideOperation()` 提供全局阻塞式操作层，含 spinner 和文案；显示期间 `#app` 与 `#modal-root` 设为 inert，避免重复点击/双提交。
+- `commitDataMutation()` / `commitConfigMutation()` 支持 `busyText` 和 `deferBusyUntilMutation`。普通新增/编辑/归档显示“保存中...”；删除显示“删除中...”并在 confirm 确认后才出现；生成结算显示“结算中...”并在 confirm 确认后才出现。
+- `refreshData()`、`refreshRates()`、记账弹窗显式“获取实时汇率”显示“刷新中...”/“汇率刷新中...”；操作状态生命周期与真实 Promise 绑定，失败后解除锁定并保留错误 toast。
+- `state.saving || state.refreshing` 统一拦截并发远端操作；`operationInProgress` 文案不再只描述“保存”。
+- 删除/结算 confirm 取消时不得出现处理中闪烁；因此这些动作使用 `deferBusyUntilMutation: true`，mutator 返回非 false 后才展示 busy。
+- PWA App Shell cache bump 到 `sync-spend-shell-v097`，确保发布后旧 app.js/css 不继续运行。
+- 新增 `tests/ui-actions.test.mjs` 3 项静态 UI 回归；当前 `npm run check` 共 33 项测试。
+
+v0.9.6 图片存储基线继续完整保留：
 
 - 业务真相源仍是 GitHub data 分支；启动严格 remote-first，不恢复任何 localStorage 账务缓存。
 - 新图片在浏览器内存中通过 `compressImageFile()` 缩放压缩：最长边默认 1600，质量读取业务 config `app.imageQuality`，目标大小默认 972800 bytes，硬上限 1MB；优先 WebP，浏览器不支持时回退 JPEG。
@@ -39,7 +51,7 @@
 - `data/data.json` schemaVersion 从 1 升为 2；旧 schema 1 仍能读取，下一次真实业务保存自动写为 schema 2。
 - GitHub JSON GET 仍保留 raw fallback（不是为了图片，而是防止长期 history/软删除导致 JSON 增大）。
 - 删除安全、事务式 state commit、ID 迁移、Frankfurter 严格参数修复、DES Token 解密规则全部继续保留。
-- 当前 `npm run check` 共 30 项测试，其中 API/media 12 项。
+- v0.9.6 当时 `npm run check` 共 30 项测试，其中 API/media 12 项；v0.9.7 当前总数为 33。
 
 ### v0.9.0 的关键架构变更
 
@@ -74,12 +86,12 @@ GitHub Pages 浏览器 -> GitHub Contents API
 
 版本发布时必须统一检查：
 
-- `package.json` -> `0.9.6`
-- `src/js/version.js` -> `APP_VERSION = "0.9.6"`
+- `package.json` -> `0.9.7`
+- `src/js/version.js` -> `APP_VERSION = "0.9.7"`
 - `index.html` -> title / Apple Web App title
 - `404.html` -> title / Apple Web App title
 - `manifest.webmanifest` -> name / short_name
-- `service-worker.js` -> `CACHE_NAME = "sync-spend-shell-v096"`
+- `service-worker.js` -> `CACHE_NAME = "sync-spend-shell-v097"`
 - `README.md`
 - 本文件 `GPT_PROJECT_MEMORY.md`
 
@@ -99,7 +111,8 @@ sync-spend-release/
 │  ├─ api.test.mjs             GitHub 保存前校验与写入回归测试
 │  ├─ crypto.test.mjs          .NET 兼容 DES Token 解密回归测试
 │  ├─ migration.test.mjs       旧数据 ID 迁移回归测试
-│  └─ cache-policy.test.mjs    GitHub 强制最新 / 无业务缓存回归测试
+│  ├─ cache-policy.test.mjs    GitHub 强制最新 / 无业务缓存回归测试
+│  └─ ui-actions.test.mjs      刷新按钮位置 + 全局操作状态回归测试
 ├─ robots.txt
 ├─ .nojekyll
 ├─ assets/icons/               PWA 图标
@@ -604,7 +617,7 @@ v0.9.3 的关键兼容规则：
 
 ### 9.2 Service Worker
 
-`service-worker.js` 当前 cache name：`sync-spend-shell-v096`。
+`service-worker.js` 当前 cache name：`sync-spend-shell-v097`。
 
 规则：
 
@@ -773,16 +786,18 @@ npm run check
 
 ## 16. 当前验证结果（2026-08-16）
 
-v0.9.6 当前交付必须确认：
+v0.9.7 当前交付必须确认：
 
-- `npm run check` 通过：Service Worker + 全部前端 JS syntax check + 30 个 `node:test` 回归用例。
-- 测试构成：8 calculator + 12 API/media + 3 crypto + 4 migration + 3 cache-policy。
+- `npm run check` 通过：Service Worker + 全部前端 JS syntax check + 33 个 `node:test` 回归用例。
+- 测试构成：8 calculator + 12 API/media + 3 crypto + 4 migration + 3 cache-policy + 3 ui-actions。
 - API/media 新增覆盖：独立二进制上传 Base64 请求体、media path/branch、stored SHA 删除、旧 `photo` 字段不写回、attachment metadata/schemaVersion 2、非法非-media path 拒绝。
 - `data/config.json`、`data/data.json`、`manifest.webmanifest` JSON 可解析；默认 `data/data.json` schemaVersion=2。
-- 版本统一为 `0.9.6`：package/version.js/index/404/manifest；PWA cache name=`sync-spend-shell-v096`。
+- 版本统一为 `0.9.7`：package/version.js/index/404/manifest；PWA cache name=`sync-spend-shell-v097`。
 - 源码不再存在 `imageFileToDataUrl()` / Canvas `toDataURL()` / `record.photo` 展示路径；只有保存清理层明确 `delete record.photo`，防止旧 Base64 字段回写。
 - 图片上传文件固定在 `media/<ledger>/<record>/...`，压缩 Blob ≤1MB；data JSON 仅 attachment metadata。
-- `commitDataMutation()` 继续 clone + SHA PUT + 成功替换 state，并新增 media rollback/afterCommit cleanup 事务 callback。
+- `commitDataMutation()` 继续 clone + SHA PUT + 成功替换 state，并保留 media rollback/afterCommit cleanup 事务 callback；v0.9.7 增加 busyText/deferBusyUntilMutation。
+- PC ledger hero 的 `ledger-refresh-btn` 必须位于 settle 按钮之前；移动端 FAB 顺序必须为 add(order 1) → refresh(order 2) → more(order 3)。
+- 所有用户主动远端操作必须显示全局 operation overlay；删除/结算 confirm 取消不能显示处理中状态；处理中必须阻止重复保存/刷新。
 - record 软删除不清理 media；永久删除 archived ledger JSON 成功后才清理引用 media。
 - 启动仍严格 GitHub remote-first；localStorage 只保存 UI 偏好，业务 data/config/rates/SHA 不缓存。
 - Service Worker 对 GitHub / Frankfurter 不缓存；同源连接 config/data 占位 network-only；App Shell network-first。
@@ -790,6 +805,20 @@ v0.9.6 当前交付必须确认：
 - Frankfurter URL 不包含 `_ts`；DES Token 规则仍为 CBC/PKCS7/UTF-16LE/ELIU。
 
 ## 17. 修改记录
+
+### 2026-08-16 — v0.9.7：主页面刷新入口 + 全局操作中反馈
+
+用户要求 PC 主页面在“结算”前增加刷新按钮，移动端在悬浮“更多”正上方增加刷新，并让删除/修改等所有操作在确认后明确显示处理中状态。完成：
+
+- PC ledger hero 新增 `ledger-refresh-btn`，固定放在 `settleNow` 前，直接调用 `refreshData()` 从 GitHub 重新 bootstrap。
+- 移动端新增 `mobile-refresh-fab`，FAB 顺序明确改为 add=1、refresh=2、more=3，因此“刷新”直接在“更多”上方。
+- 新增全局 `operation-overlay`、spinner、message；操作期间 inert 锁定 app/modal，防止重复点击和双写。
+- `commitDataMutation()` / `commitConfigMutation()` 新增 `busyText` 与 `deferBusyUntilMutation`；普通写入“保存中...”，删除“删除中...”，结算“结算中...”。
+- delete record / delete archived ledger / consumer delete-or-deactivate / settle 使用 defer 模式：只有原生 confirm 返回 true 后才展示 busy，取消不闪烁。
+- `refreshData()` / `refreshRates()` / 记账弹窗显式实时汇率刷新均加入真实 Promise 生命周期的刷新状态；`state.refreshing` 与 `state.saving` 互斥。
+- 中英文新增 refreshing/refreshingRates/deleting/settling/processing 文案，`saving` 中文改为“保存中...”，并发提示改为通用“已有操作正在进行”。
+- CSS 增加 PC/移动端刷新位置规则和 operation overlay；PWA cache bump 为 `sync-spend-shell-v097`。
+- 新增 `tests/ui-actions.test.mjs` 3 项；`npm run check` 当前 33/33 通过。
 
 ### 2026-08-16 — v0.9.6：图片外置到 GitHub media，data.json 只存元数据
 
@@ -908,4 +937,4 @@ v0.9.6 当前交付必须确认：
 
 ### 2026-08-16 — 建立 GPT 长期项目记忆
 
-对 v0.8.8 原始附件完成项目结构、数据模型、分摊/结算、缓存、Worker/GitHub 链路的基线梳理，并建立本文件。该条作为历史来源保留；架构事实以 v0.9.6 当前章节为准。
+对 v0.8.8 原始附件完成项目结构、数据模型、分摊/结算、缓存、Worker/GitHub 链路的基线梳理，并建立本文件。该条作为历史来源保留；架构事实以 v0.9.7 当前章节为准。
