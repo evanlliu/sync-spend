@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "updatedAt": "2026-08-16T21:48:40.591Z",
+  "schemaVersion": 2,
+  "updatedAt": "2026-08-16T22:11:46.530Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -12,6 +12,46 @@
         "consumer_msw4kcs7_1yqf17i36l1ee"
       ],
       "records": [
+        {
+          "id": "record_mswd0a58_6hu6lh1iuserm",
+          "date": "2026-08-16",
+          "consumerId": "consumer_evan",
+          "amount": 100,
+          "currency": "MXN",
+          "amountCny": 39.61,
+          "rateToCny": 0.3961,
+          "rateSource": "live",
+          "splitMode": "equal",
+          "splitParticipantIds": [
+            "consumer_evan",
+            "consumer_mr8b5dem_r23g5l93jxnr",
+            "consumer_msw4kcs7_1yqf17i36l1ee"
+          ],
+          "splitAmountsCny": {},
+          "note": "",
+          "attachments": [
+            {
+              "id": "img_mswd0s9s_637xdf1sxbyhp",
+              "path": "media/ledger_msw4lxnw_lskfuw1c0y3iz/record_mswd0a58_6hu6lh1iuserm/img_mswd0s9s_637xdf1sxbyhp.jpg",
+              "mime": "image/jpeg",
+              "size": 477883,
+              "width": 1200,
+              "height": 1600,
+              "sha": "7d20187d7fce9c11672bf341829b95830fde9262",
+              "createdAt": "2026-08-16T22:11:44.798Z"
+            }
+          ],
+          "createdAt": "2026-08-16T22:11:21.308Z",
+          "type": "expense",
+          "updatedAt": "2026-08-16T22:11:44.798Z",
+          "history": [
+            {
+              "action": "created",
+              "at": "2026-08-16T22:11:44.798Z",
+              "summary": "刘彬 $100.00 / ¥39.61"
+            }
+          ]
+        },
         {
           "id": "record_mswba86y_8aemw6hkp10t",
           "date": "2026-08-16",
@@ -29,7 +69,6 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "photo": null,
           "createdAt": "2026-08-16T21:23:06.107Z",
           "type": "expense",
           "updatedAt": "2026-08-16T21:48:40.587Z",
@@ -46,7 +85,8 @@
             }
           ],
           "deleted": true,
-          "deletedAt": "2026-08-16T21:48:40.587Z"
+          "deletedAt": "2026-08-16T21:48:40.587Z",
+          "attachments": []
         },
         {
           "id": "record_msw4nbzm_3gg1k51nqv6qe",
@@ -65,7 +105,6 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "photo": null,
           "createdAt": "2026-08-16T18:17:20.242Z",
           "type": "expense",
           "updatedAt": "2026-08-16T18:32:45.721Z",
@@ -151,7 +190,8 @@
               "summary": "周孝双 $100.00 / ¥39.61"
             }
           ],
-          "deleted": true
+          "deleted": true,
+          "attachments": []
         },
         {
           "id": "record_msw4nbzm_3gg1k51nqv6qe__repair2",
@@ -170,7 +210,6 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "photo": null,
           "createdAt": "2026-08-16T18:17:20.242Z",
           "type": "expense",
           "updatedAt": "2026-08-16T20:39:05.069Z",
@@ -192,11 +231,12 @@
             }
           ],
           "deleted": true,
-          "deletedAt": "2026-08-16T20:39:05.069Z"
+          "deletedAt": "2026-08-16T20:39:05.069Z",
+          "attachments": []
         }
       ],
       "createdAt": "2026-08-16T18:16:15.021Z",
-      "updatedAt": "2026-08-16T21:48:40.587Z"
+      "updatedAt": "2026-08-16T22:11:44.798Z"
     },
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
@@ -228,7 +268,8 @@
               "at": "2026-07-24T04:46:21.959Z",
               "summary": "刘彬 向 吴恒 支付了 ¥53.84"
             }
-          ]
+          ],
+          "attachments": []
         },
         {
           "id": "record_mrbnq19j_3s89p91o6x2az",
@@ -246,7 +287,6 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "photo": null,
           "createdAt": "2026-07-08T05:48:26.983Z",
           "type": "expense",
           "updatedAt": "2026-07-08T05:49:02.410Z",
@@ -262,7 +302,8 @@
               "summary": "刘彬 $500.00 / ¥194.65"
             }
           ],
-          "deleted": true
+          "deleted": true,
+          "attachments": []
         },
         {
           "id": "record_mrbd6akq_v4cums18zd4m3",
@@ -280,7 +321,6 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "photo": "",
           "createdAt": "2026-07-08T00:53:09.772Z",
           "type": "expense",
           "updatedAt": "2026-07-08T00:53:39.076Z",
@@ -290,7 +330,8 @@
               "at": "2026-07-08T00:53:39.076Z",
               "summary": "吴恒 $99.80 / ¥38.85"
             }
-          ]
+          ],
+          "attachments": []
         },
         {
           "id": "settlement_mr9xidra_18vznxwk36fp1",
@@ -319,7 +360,8 @@
               "summary": "刘彬 向 吴恒 支付了 ¥34.41"
             }
           ],
-          "deleted": true
+          "deleted": true,
+          "attachments": []
         },
         {
           "id": "record_mr8stjfz_wuhn3q1tevu44",
@@ -337,7 +379,7 @@
           ],
           "splitAmountsCny": {},
           "note": "HEB",
-		  "createdAt": "2026-07-06T05:47:50.063Z",
+          "createdAt": "2026-07-06T05:47:50.063Z",
           "type": "expense",
           "updatedAt": "2026-07-06T05:48:35.373Z",
           "history": [
@@ -346,7 +388,8 @@
               "at": "2026-07-06T05:48:35.373Z",
               "summary": "吴恒 $177.20 / ¥68.81"
             }
-          ]
+          ],
+          "attachments": []
         },
         {
           "id": "settlement_mr8prrd9_1wj2yp21jrbdmw",
@@ -375,7 +418,8 @@
               "summary": "吴恒 向 刘彬 支付了 ¥294.15"
             }
           ],
-          "deleted": true
+          "deleted": true,
+          "attachments": []
         },
         {
           "id": "record_mr8m5f0e_u2m0k2fnqthx",
@@ -393,7 +437,6 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "photo": null,
           "createdAt": "2026-07-06T02:41:06.879Z",
           "type": "expense",
           "updatedAt": "2026-07-06T05:47:15.156Z",
@@ -409,7 +452,8 @@
               "summary": "刘彬 ¥200.00 / ¥200.00"
             }
           ],
-          "deleted": true
+          "deleted": true,
+          "attachments": []
         },
         {
           "id": "record_mr8iqpc6_1ixfdlz10appy1",
@@ -427,7 +471,7 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-		  "createdAt": "2026-07-06T01:05:41.574Z",
+          "createdAt": "2026-07-06T01:05:41.574Z",
           "type": "expense",
           "updatedAt": "2026-07-06T05:47:18.612Z",
           "history": [
@@ -457,7 +501,8 @@
               "summary": "刘彬 $1,000.00 / ¥388.30"
             }
           ],
-          "deleted": true
+          "deleted": true,
+          "attachments": []
         },
         {
           "id": "record_mr8ezktf_11cjvlg150sk5f",
@@ -475,7 +520,6 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "photo": null,
           "createdAt": "2026-07-05T23:20:37.155Z",
           "type": "expense",
           "updatedAt": "2026-07-06T00:48:38.948Z",
@@ -496,7 +540,8 @@
               "summary": "刘彬 ¥100.00 / ¥100.00"
             }
           ],
-          "deleted": true
+          "deleted": true,
+          "attachments": []
         },
         {
           "id": "settlement_mr8eyeyk_14la87o1ptb9e1",
@@ -525,7 +570,8 @@
               "summary": "吴恒 向 刘彬 支付了 ¥104.25"
             }
           ],
-          "deleted": true
+          "deleted": true,
+          "attachments": []
         },
         {
           "id": "record_mr8cuj0c_1p3xh529gy8b",
@@ -543,7 +589,7 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-"createdAt": "2026-07-05T22:20:42.300Z",
+          "createdAt": "2026-07-05T22:20:42.300Z",
           "updatedAt": "2026-07-06T00:48:43.296Z",
           "deleted": true,
           "history": [
@@ -552,7 +598,8 @@
               "at": "2026-07-06T00:48:43.296Z",
               "summary": "刘彬 ₺100.00 / ¥14.50"
             }
-          ]
+          ],
+          "attachments": []
         },
         {
           "id": "record_mr8baqle_1vuakb2jx1fs0",
@@ -570,7 +617,6 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "photo": null,
           "createdAt": "2026-07-05T21:37:19.394Z",
           "updatedAt": "2026-07-06T00:48:46.746Z",
           "deleted": true,
@@ -580,7 +626,8 @@
               "at": "2026-07-06T00:48:46.746Z",
               "summary": "吴恒 $500.00 / ¥194.00"
             }
-          ]
+          ],
+          "attachments": []
         },
         {
           "id": "record_mr8b9n77_12mleww1r2qlya",
@@ -598,7 +645,6 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "photo": null,
           "createdAt": "2026-07-05T21:36:28.339Z",
           "updatedAt": "2026-07-06T00:53:49.662Z",
           "deleted": true,
@@ -608,7 +654,8 @@
               "at": "2026-07-06T00:53:49.662Z",
               "summary": "刘彬 $1,000.00 / ¥388.00"
             }
-          ]
+          ],
+          "attachments": []
         }
       ],
       "createdAt": "2026-07-05T21:36:20.135Z",
