@@ -5,11 +5,11 @@
       "zh-CN": "同步记账",
       "en-US": "Sync Spend"
     },
-    "version": "0.6.4",
     "defaultLanguage": "zh-CN",
     "baseCurrency": "CNY",
     "imageMaxWidth": 1600,
     "imageQuality": 0.72,
+    "version": "0.6.4",
     "timezone": "America/Monterrey"
   },
   "consumers": [
@@ -26,6 +26,14 @@
       "name": {
         "zh-CN": "吴恒",
         "en-US": "Henry"
+      },
+      "active": true
+    },
+    {
+      "id": "consumer_msw4kcs7_1yqf17i36l1ee",
+      "name": {
+        "zh-CN": "周孝双",
+        "en-US": "Aiden"
       },
       "active": true
     }
