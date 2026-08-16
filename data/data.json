@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-16T18:21:54.902Z",
+  "updatedAt": "2026-08-16T18:32:03.560Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
       "name": "墨西哥三人",
-      "archived": true,
+      "archived": false,
       "participantIds": [
         "consumer_evan",
         "consumer_mr8b5dem_r23g5l93jxnr",
@@ -138,7 +138,7 @@
         }
       ],
       "createdAt": "2026-08-16T18:16:15.021Z",
-      "updatedAt": "2026-08-16T18:21:20.649Z"
+      "updatedAt": "2026-08-16T18:32:04.457Z"
     },
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
