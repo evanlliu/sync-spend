@@ -43,7 +43,7 @@ export function clone(value) {
 
 export function normalizeData(data) {
   return {
-    schemaVersion: 1,
+    schemaVersion: Number(data?.schemaVersion || 2),
     updatedAt: data?.updatedAt || null,
     ledgers: Array.isArray(data?.ledgers) ? data.ledgers : []
   };
@@ -52,7 +52,7 @@ export function normalizeData(data) {
 export function normalizeConfig(config) {
   const fallback = {
     schemaVersion: 1,
-    app: { name: { "zh-CN": "同步记账", "en-US": "Sync Spend" }, defaultLanguage: "zh-CN", baseCurrency: "CNY", imageMaxWidth: 1600, imageQuality: 0.72 },
+    app: { name: { "zh-CN": "同步记账", "en-US": "Sync Spend" }, defaultLanguage: "zh-CN", baseCurrency: "CNY", imageMaxWidth: 1600, imageQuality: 0.72, imageMaxBytes: 972800 },
     consumers: [],
     currencies: [
       { code: "CNY", name: { "zh-CN": "人民币", "en-US": "Chinese Yuan" }, symbol: "¥" },
@@ -116,19 +116,82 @@ export function clear(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
 }
 
-export async function imageFileToDataUrl(file, maxWidth = 1600, quality = 0.72) {
+export async function compressImageFile(file, { maxDimension = 1600, quality = 0.78, maxBytes = 950 * 1024 } = {}) {
   if (!file) return null;
+  if (file.type && !String(file.type).startsWith("image/")) throw new Error("Selected file is not an image");
+
   const source = await loadImageSource(file);
-  const scale = Math.min(1, maxWidth / source.width);
-  const width = Math.max(1, Math.round(source.width * scale));
-  const height = Math.max(1, Math.round(source.height * scale));
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(source, 0, 0, width, height);
-  if (source.close) source.close();
-  return canvas.toDataURL("image/jpeg", quality);
+  try {
+    const sourceWidth = Number(source.width || source.naturalWidth || 0);
+    const sourceHeight = Number(source.height || source.naturalHeight || 0);
+    if (!sourceWidth || !sourceHeight) throw new Error("Cannot read image dimensions");
+
+    const limit = Math.max(320, Number(maxDimension) || 1600);
+    const targetBytes = Math.min(1024 * 1024, Math.max(128 * 1024, Number(maxBytes) || 950 * 1024));
+    const initialQuality = Math.min(0.92, Math.max(0.5, Number(quality) || 0.78));
+    let scale = Math.min(1, limit / Math.max(sourceWidth, sourceHeight));
+    let currentQuality = initialQuality;
+    let lastBlob = null;
+    let lastWidth = 0;
+    let lastHeight = 0;
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const width = Math.max(1, Math.round(sourceWidth * scale));
+      const height = Math.max(1, Math.round(sourceHeight * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) throw new Error("Canvas is unavailable");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(source, 0, 0, width, height);
+
+      const blob = await canvasToImageBlob(canvas, currentQuality);
+      canvas.width = 1;
+      canvas.height = 1;
+      if (!blob) throw new Error("Image compression failed");
+
+      lastBlob = blob;
+      lastWidth = width;
+      lastHeight = height;
+      if (blob.size <= targetBytes) return imageBlobResult(blob, width, height);
+
+      if (currentQuality > 0.58) {
+        currentQuality = Math.max(0.58, currentQuality - 0.08);
+      } else {
+        scale *= 0.82;
+        currentQuality = initialQuality;
+      }
+    }
+
+    if (lastBlob && lastBlob.size <= 1024 * 1024) return imageBlobResult(lastBlob, lastWidth, lastHeight);
+    throw new Error("Image remains larger than 1 MB after compression");
+  } finally {
+    if (typeof source.close === "function") source.close();
+  }
+}
+
+function imageBlobResult(blob, width, height) {
+  const mime = blob.type === "image/webp" ? "image/webp" : "image/jpeg";
+  return {
+    blob,
+    mime,
+    extension: mime === "image/webp" ? "webp" : "jpg",
+    size: blob.size,
+    width,
+    height
+  };
+}
+
+async function canvasToImageBlob(canvas, quality) {
+  const webp = await canvasToBlob(canvas, "image/webp", quality);
+  if (webp && webp.type === "image/webp") return webp;
+  return await canvasToBlob(canvas, "image/jpeg", quality);
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
 }
 
 async function loadImageSource(file) {

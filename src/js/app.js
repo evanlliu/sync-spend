@@ -10,7 +10,7 @@ import {
   el,
   formatDate,
   formatDateTime,
-  imageFileToDataUrl,
+  compressImageFile,
   isIosSafari,
   isStandalonePwa,
   money,
@@ -21,6 +21,7 @@ import {
 const LAST_CURRENCY_KEY = "syncSpend.lastCurrency";
 const LAST_LEDGER_KEY = "syncSpend.lastLedgerId";
 const RATE_FETCH_DEBOUNCE_MS = 500;
+const MEDIA_MAX_BYTES = 950 * 1024;
 
 const api = new ApiClient();
 const app = document.querySelector("#app");
@@ -31,6 +32,7 @@ setLanguage(localStorage.getItem("syncSpend.lang") || "zh-CN");
 
 let clientConfigPromise = null;
 let remoteLoadPromise = null;
+let modalCleanup = null;
 init();
 
 async function init() {
@@ -604,9 +606,10 @@ function renderExpenseRecord(ledger, record) {
   const payerName = consumerName(record.consumerId);
   const participantNames = sanitizeSplitParticipants(record, ledger.participantIds).map(consumerName).join(" / ");
   const shareEntries = Object.entries(recordShareMap(record, ledger.participantIds));
+  const attachment = recordPrimaryAttachment(record);
 
   return recordCard("expense-record", [
-    record.photo ? photoThumb(record.photo) : el("div", { className: "record-photo placeholder", text: "📷" }),
+    attachment ? photoThumb(attachment) : el("div", { className: "record-photo placeholder", text: "📷" }),
     el("div", { className: "record-body record-body-enhanced" }, [
       el("div", { className: "record-primary-line" }, [
         el("div", { className: "record-story" }, [
@@ -793,10 +796,36 @@ function recordMetaChip(label, value, key = "") {
   ]);
 }
 
-function photoThumb(src) {
+function photoThumb(attachment) {
+  const src = api.mediaUrl(attachment.path);
   return el("button", { className: "record-photo-btn", attrs: { type: "button", "aria-label": t("viewPhoto") }, on: { click: () => showImageViewer(src) } }, [
-    el("img", { className: "record-photo", attrs: { src, alt: t("photo") } })
+    el("img", { className: "record-photo", attrs: { src, alt: t("photo"), loading: "lazy", decoding: "async" } })
   ]);
+}
+
+function recordPrimaryAttachment(record) {
+  return (Array.isArray(record?.attachments) ? record.attachments : []).find((item) => item?.path) || null;
+}
+
+function buildMediaPath(ledgerId, recordId, attachmentId, extension) {
+  const ext = String(extension || "webp").toLowerCase() === "jpg" ? "jpg" : "webp";
+  return `media/${safeMediaSegment(ledgerId)}/${safeMediaSegment(recordId)}/${safeMediaSegment(attachmentId)}.${ext}`;
+}
+
+function safeMediaSegment(value) {
+  const segment = String(value || "").trim().replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/^_+|_+$/g, "");
+  return (segment || "item").slice(0, 140);
+}
+
+function formatFileSize(bytes) {
+  const value = Number(bytes || 0);
+  if (value < 1024) return `${Math.max(0, Math.round(value))} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(value >= 100 * 1024 ? 0 : 1)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function ledgerAttachments(ledger) {
+  return (ledger?.records || []).flatMap((record) => Array.isArray(record?.attachments) ? record.attachments : []).filter((item) => item?.path);
 }
 
 function renderSettings() {
@@ -1077,7 +1106,7 @@ async function showExpenseModal(ledger, record = null) {
     splitParticipantIds: selectableParticipantIds.slice(),
     splitAmountsCny: {},
     note: "",
-    photo: null,
+    attachments: [],
     createdAt: new Date().toISOString()
   };
 
@@ -1086,6 +1115,13 @@ async function showExpenseModal(ledger, record = null) {
   draft.splitParticipantIds = sanitizeSplitParticipants(draft, ledgerParticipantIds);
   if (!draft.splitParticipantIds.length) draft.splitParticipantIds = selectableParticipantIds.slice();
   draft.splitAmountsCny = draft.splitAmountsCny || {};
+  draft.attachments = Array.isArray(draft.attachments) ? draft.attachments.filter((item) => item?.path) : [];
+  delete draft.photo;
+  const originalAttachments = editing ? clone(draft.attachments) : [];
+  let pendingPhoto = null;
+  let existingPhotoRemoved = false;
+  let imageSelectionVersion = 0;
+  let imageProcessingPromise = Promise.resolve();
 
   const consumerSelect = selectInput("consumerId", selectableParticipantIds.map((id) => ({ value: id, label: consumerName(id) })), draft.consumerId);
   const amountInput = input({ name: "amount", type: "number", step: "0.01", min: "0", value: draft.amount, required: true });
@@ -1128,6 +1164,11 @@ async function showExpenseModal(ledger, record = null) {
     preview,
     modalActions()
   ]));
+  modalCleanup = () => {
+    imageSelectionVersion += 1;
+    releasePendingPhotoPreview();
+    pendingPhoto = null;
+  };
 
   let rateFetchTimer = null;
   amountInput.addEventListener("input", () => {
@@ -1155,13 +1196,34 @@ async function showExpenseModal(ledger, record = null) {
     draft.splitMode = splitModeSelect.value;
     renderSplitAmountInputs({ resetAmountDefaults: true });
   });
-  fileInput.addEventListener("change", async () => {
+  fileInput.addEventListener("change", () => {
+    const selectionVersion = ++imageSelectionVersion;
     const file = fileInput.files?.[0];
-    if (!file) return;
-    draft.photo = await imageFileToDataUrl(file, state.config.app.imageMaxWidth, state.config.app.imageQuality);
-    renderPhotoPreview();
-    toast(t("imageTooLarge"));
+    if (!file) {
+      imageProcessingPromise = Promise.resolve();
+      return;
+    }
+    imageProcessingPromise = prepareSelectedImage(file, selectionVersion);
   });
+
+  async function prepareSelectedImage(file, selectionVersion) {
+    try {
+      const compressed = await compressImageFile(file, {
+        maxDimension: state.config.app.imageMaxWidth,
+        quality: state.config.app.imageQuality,
+        maxBytes: Number(state.config.app.imageMaxBytes || MEDIA_MAX_BYTES)
+      });
+      if (selectionVersion !== imageSelectionVersion) return;
+      releasePendingPhotoPreview();
+      pendingPhoto = { ...compressed, previewUrl: URL.createObjectURL(compressed.blob) };
+      renderPhotoPreview();
+      toast(t("imagePrepared", { size: formatFileSize(compressed.size) }), "success");
+    } catch (error) {
+      if (selectionVersion !== imageSelectionVersion) return;
+      fileInput.value = "";
+      toast(`${t("imagePrepareFailed")}: ${error.message}`, "error");
+    }
+  }
 
   if (!editing) fetchLiveRateForForm(false);
 
@@ -1180,13 +1242,28 @@ async function showExpenseModal(ledger, record = null) {
 
   function renderPhotoPreview() {
     clear(preview);
-    if (!draft.photo) return;
+    const existingAttachment = !existingPhotoRemoved ? originalAttachments[0] : null;
+    const src = pendingPhoto?.previewUrl || (existingAttachment ? api.mediaUrl(existingAttachment.path) : null);
+    if (!src) return;
     preview.append(
-      el("button", { className: "preview-image-btn", attrs: { type: "button" }, on: { click: () => showImageViewer(draft.photo) } }, [
-        el("img", { attrs: { src: draft.photo, alt: t("photo") } })
+      el("button", { className: "preview-image-btn", attrs: { type: "button" }, on: { click: () => showImageViewer(src) } }, [
+        el("img", { attrs: { src, alt: t("photo") } })
       ]),
-      el("button", { className: "btn danger small", text: t("deletePhoto"), attrs: { type: "button" }, on: { click: () => { draft.photo = null; fileInput.value = ""; renderPhotoPreview(); } } })
+      el("button", { className: "btn danger small", text: t("deletePhoto"), attrs: { type: "button" }, on: { click: () => {
+        if (pendingPhoto) {
+          releasePendingPhotoPreview();
+          pendingPhoto = null;
+          fileInput.value = "";
+        } else {
+          existingPhotoRemoved = true;
+        }
+        renderPhotoPreview();
+      } } })
     );
+  }
+
+  function releasePendingPhotoPreview() {
+    if (pendingPhoto?.previewUrl) URL.revokeObjectURL(pendingPhoto.previewUrl);
   }
 
   function renderSplitAmountInputs({ resetAmountDefaults = false } = {}) {
@@ -1286,6 +1363,7 @@ async function showExpenseModal(ledger, record = null) {
 
   async function submit(event) {
     event.preventDefault();
+    await imageProcessingPromise;
     const originalAmount = Number(amountInput.value);
     if (!Number.isFinite(originalAmount) || originalAmount <= 0) {
       toast(t("amountMustBePositive"), "error");
@@ -1333,39 +1411,76 @@ async function showExpenseModal(ledger, record = null) {
       splitParticipantIds: splitParticipantIds.slice(),
       splitAmountsCny,
       note: noteInput.value.trim(),
+      attachments: [],
       createdAt: draft.createdAt || now,
       updatedAt: now
     };
+    delete next.photo;
 
-    const saved = await commitDataMutation((nextData) => {
+    const saved = await commitDataMutation(async (nextData, transaction) => {
       const targetLedger = nextData.ledgers.find((item) => item.id === ledgerId);
       if (!targetLedger) throw new Error(t("ledgerNotFound"));
       targetLedger.records = Array.isArray(targetLedger.records) ? targetLedger.records : [];
 
+      const targetRecord = editing
+        ? targetLedger.records.find((item) => item.id === recordId && !item.deleted)
+        : null;
+      if (editing && !targetRecord) throw new Error(t("recordNotFound"));
+
+      const finalRecordId = editing
+        ? targetRecord.id
+        : allocateEntityId("record", targetLedger.records, next.id);
+      const previousAttachments = editing && Array.isArray(targetRecord.attachments)
+        ? clone(targetRecord.attachments).filter((item) => item?.path)
+        : [];
+      let nextAttachments = existingPhotoRemoved ? [] : clone(originalAttachments);
+
+      if (pendingPhoto) {
+        const attachmentId = uid("img");
+        const path = buildMediaPath(ledgerId, finalRecordId, attachmentId, pendingPhoto.extension);
+        const uploaded = await api.uploadMediaFile(path, pendingPhoto.blob, `sync-spend: add image for ${finalRecordId}`);
+        const attachment = {
+          id: attachmentId,
+          path: uploaded.path,
+          mime: pendingPhoto.mime,
+          size: pendingPhoto.size,
+          width: pendingPhoto.width,
+          height: pendingPhoto.height,
+          sha: uploaded.sha,
+          createdAt: now
+        };
+        nextAttachments = [attachment];
+        transaction.onRollback(() => api.deleteMediaFile(attachment.path, attachment.sha, `sync-spend: rollback image for ${finalRecordId}`));
+      }
+
+      const nextRecord = { ...clone(next), id: finalRecordId, attachments: nextAttachments };
       if (editing) {
-        const targetRecord = targetLedger.records.find((item) => item.id === recordId && !item.deleted);
-        if (!targetRecord) throw new Error(t("recordNotFound"));
         const updatedRecord = {
-          ...clone(next),
-          createdAt: targetRecord.createdAt || next.createdAt,
+          ...nextRecord,
+          createdAt: targetRecord.createdAt || nextRecord.createdAt,
           history: Array.isArray(targetRecord.history) ? targetRecord.history.slice() : []
         };
         appendRecordHistory(updatedRecord, "updated", `${t("before")}: ${expenseHistorySummary(targetRecord)} → ${t("after")}: ${expenseHistorySummary(updatedRecord)}`, now);
         Object.assign(targetRecord, updatedRecord);
       } else {
-        const createdRecord = {
-          ...clone(next),
-          history: []
-        };
-        createdRecord.id = allocateEntityId("record", targetLedger.records, createdRecord.id);
+        const createdRecord = { ...nextRecord, history: [] };
         appendRecordHistory(createdRecord, "created", expenseHistorySummary(createdRecord), now);
         targetLedger.records.unshift(createdRecord);
+      }
+
+      const retainedPaths = new Set(nextAttachments.map((item) => item.path));
+      for (const attachment of previousAttachments) {
+        if (!retainedPaths.has(attachment.path)) {
+          transaction.afterCommit(() => api.deleteMediaFile(attachment.path, attachment.sha, `sync-spend: remove replaced image for ${finalRecordId}`));
+        }
       }
       targetLedger.updatedAt = now;
     });
 
     if (!saved) return;
     savePreferredCurrency(next.currency);
+    releasePendingPhotoPreview();
+    pendingPhoto = null;
     closeModal();
   }
 }
@@ -1450,6 +1565,7 @@ function modalActions() {
 }
 
 function openModal(title, body, modalClassName = "") {
+  runModalCleanup();
   clear(modalRoot);
   modalRoot.append(el("div", { className: "modal-backdrop", on: { click: (event) => { if (event.target.classList.contains("modal-backdrop")) closeModal(); } } }, [
     el("section", { className: `modal glass ${modalClassName}`.trim() }, [
@@ -1463,7 +1579,16 @@ function openModal(title, body, modalClassName = "") {
 }
 
 function closeModal() {
+  runModalCleanup();
   clear(modalRoot);
+}
+
+function runModalCleanup() {
+  const cleanup = modalCleanup;
+  modalCleanup = null;
+  if (typeof cleanup === "function") {
+    try { cleanup(); } catch { /* preview resource cleanup must not block modal close */ }
+  }
 }
 
 function showImageViewer(src) {
@@ -1633,7 +1758,7 @@ async function createSettlementRecords(ledgerOrId) {
 }
 
 async function deleteArchivedLedger(ledgerId) {
-  const saved = await commitDataMutation((nextData) => {
+  const saved = await commitDataMutation((nextData, transaction) => {
     const ledger = nextData.ledgers.find((item) => item.id === ledgerId);
     if (!ledger || !ledger.archived) throw new Error(t("ledgerNotFound"));
 
@@ -1646,6 +1771,9 @@ async function deleteArchivedLedger(ledgerId) {
       deleted: deletedRecordCount
     }))) return false;
 
+    for (const attachment of ledgerAttachments(ledger)) {
+      transaction.afterCommit(() => api.deleteMediaFile(attachment.path, attachment.sha, `sync-spend: delete media for ledger ${ledgerId}`));
+    }
     nextData.ledgers = nextData.ledgers.filter((item) => item.id !== ledgerId);
   }, { render: false });
 
@@ -1799,28 +1927,59 @@ async function commitDataMutation(mutator, { render = true } = {}) {
   }
 
   state.saving = true;
+  const rollbackTasks = [];
+  const afterCommitTasks = [];
+  const transaction = {
+    onRollback(task) { if (typeof task === "function") rollbackTasks.push(task); },
+    afterCommit(task) { if (typeof task === "function") afterCommitTasks.push(task); }
+  };
+
   try {
     await ensureFullDataForMutation();
     const nextData = clone(state.data);
-    const mutationResult = await mutator(nextData);
-    if (mutationResult === false) return false;
+    const mutationResult = await mutator(nextData, transaction);
+    if (mutationResult === false) {
+      await runRemoteTasks(rollbackTasks, { reverse: true, silent: true });
+      return false;
+    }
 
     const payload = await api.saveData(nextData, state.dataSha);
-    nextData.updatedAt = payload.updatedAt || new Date().toISOString();
-    state.data = nextData;
+    const savedData = payload.data || nextData;
+    savedData.updatedAt = payload.updatedAt || savedData.updatedAt || new Date().toISOString();
+    state.data = savedData;
     state.dataSha = payload.sha;
-    state.lastSync = nextData.updatedAt;
+    state.lastSync = savedData.updatedAt;
     state.remoteReady = true;
     if (render) renderApp();
     toast(t("saved"), "success");
+
+    const cleanupErrors = await runRemoteTasks(afterCommitTasks);
+    if (cleanupErrors.length) {
+      toast(t("mediaCleanupFailed", { count: cleanupErrors.length }), "error");
+    }
     return true;
   } catch (error) {
+    await runRemoteTasks(rollbackTasks, { reverse: true, silent: true });
     const message = error.code === "GITHUB_CONFLICT" ? t("conflict") : `${t("saveFailed")}: ${error.message}`;
     toast(message, "error");
     return false;
   } finally {
     state.saving = false;
   }
+}
+
+async function runRemoteTasks(tasks, { reverse = false, silent = false } = {}) {
+  const queue = reverse ? tasks.slice().reverse() : tasks.slice();
+  const errors = [];
+  for (const task of queue) {
+    try {
+      await task();
+    } catch (error) {
+      errors.push(error);
+      if (!silent) console.warn("Sync Spend remote cleanup failed", error);
+    }
+  }
+  return errors;
 }
 
 async function commitConfigMutation(mutator, { render = true } = {}) {

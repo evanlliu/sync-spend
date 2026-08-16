@@ -147,7 +147,7 @@ export class ApiClient {
     const github = this.requireGithub();
     const nextData = prepareDataForSave(data);
     const result = await this.writeJsonFile(github.dataPath, nextData, sha, "sync-spend: update data.json");
-    return { ok: true, sha: result.sha, updatedAt: nextData.updatedAt };
+    return { ok: true, sha: result.sha, updatedAt: nextData.updatedAt, data: nextData };
   }
 
   async saveConfig(config, sha) {
@@ -155,6 +155,92 @@ export class ApiClient {
     const nextConfig = prepareConfigForSave(config);
     const result = await this.writeJsonFile(github.configPath, nextConfig, sha, "sync-spend: update config.json");
     return { ok: true, sha: result.sha, updatedAt: new Date().toISOString() };
+  }
+
+  mediaUrl(filePath) {
+    const github = this.requireGithub();
+    const encodedPath = normalizeRepoPath(filePath).split("/").map(encodeURIComponent).join("/");
+    return `https://raw.githubusercontent.com/${encodeURIComponent(github.owner)}/${encodeURIComponent(github.repo)}/${encodeURIComponent(github.branch)}/${encodedPath}`;
+  }
+
+  async uploadMediaFile(filePath, blob, message = "sync-spend: add media") {
+    const github = this.requireGithub();
+    const path = assertMediaPath(filePath);
+    if (!(blob instanceof Blob)) throw apiError(400, "INVALID_MEDIA", "media must be a Blob");
+    if (!blob.size) throw apiError(400, "INVALID_MEDIA", "media file must not be empty");
+    if (blob.size > 1024 * 1024) throw apiError(400, "MEDIA_TOO_LARGE", "media file must be 1 MB or smaller after compression");
+
+    const content = bytesToBase64(new Uint8Array(await blob.arrayBuffer()));
+    const res = await fetch(this.githubContentUrl(path), {
+      method: "PUT",
+      headers: {
+        ...this.githubHeaders(),
+        "content-type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify({
+        message,
+        content,
+        branch: github.branch
+      }),
+      cache: "no-store"
+    });
+
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const code = res.status === 409 || res.status === 422 ? "MEDIA_CONFLICT" : "MEDIA_UPLOAD_FAILED";
+      throw apiError(res.status, code, payload.message || `Cannot upload ${path}`);
+    }
+
+    return {
+      path,
+      sha: payload?.content?.sha || null,
+      commit: payload?.commit?.sha || null
+    };
+  }
+
+  async deleteMediaFile(filePath, expectedSha = null, message = "sync-spend: delete media") {
+    const github = this.requireGithub();
+    const path = assertMediaPath(filePath);
+    let sha = String(expectedSha || "").trim();
+
+    if (!sha) {
+      const metadata = await this.readContentMetadata(path);
+      if (!metadata) return { ok: true, deleted: false, missing: true };
+      sha = metadata.sha;
+    }
+
+    const res = await fetch(this.githubContentUrl(path), {
+      method: "DELETE",
+      headers: {
+        ...this.githubHeaders(),
+        "content-type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify({ message, sha, branch: github.branch }),
+      cache: "no-store"
+    });
+
+    if (res.status === 404) return { ok: true, deleted: false, missing: true };
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const code = res.status === 409 ? "MEDIA_CONFLICT" : "MEDIA_DELETE_FAILED";
+      throw apiError(res.status, code, payload.message || `Cannot delete ${path}`);
+    }
+    return { ok: true, deleted: true, commit: payload?.commit?.sha || null };
+  }
+
+  async readContentMetadata(filePath) {
+    const github = this.requireGithub();
+    const url = new URL(this.githubContentUrl(filePath));
+    url.searchParams.set("ref", github.branch);
+    const res = await fetch(url, { headers: this.githubHeaders(), cache: "no-store" });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const body = await safeReadText(res);
+      throw apiError(res.status, "GITHUB_READ_FAILED", `Cannot read ${filePath} metadata: ${body}`);
+    }
+    const payload = await res.json();
+    if (payload.type !== "file" || !payload.sha) throw apiError(500, "GITHUB_INVALID_FILE", `${filePath} is not a GitHub file`);
+    return { sha: payload.sha, size: Number(payload.size || 0) };
   }
 
   requireGithub() {
@@ -353,19 +439,26 @@ function prepareDataForSave(data) {
   if (!data || typeof data !== "object") throw apiError(400, "INVALID_DATA", "data must be an object");
   if (!Array.isArray(data.ledgers)) throw apiError(400, "INVALID_DATA", "data.ledgers must be an array");
 
-  assertUniqueIds(data.ledgers, "ledger", "INVALID_DATA");
-  for (const ledger of data.ledgers) {
+  const next = cloneJson(data);
+  assertUniqueIds(next.ledgers, "ledger", "INVALID_DATA");
+  const mediaPaths = new Set();
+
+  for (const ledger of next.ledgers) {
     if (!ledger || typeof ledger !== "object") throw apiError(400, "INVALID_DATA", "every ledger must be an object");
     if (!Array.isArray(ledger.participantIds)) throw apiError(400, "INVALID_DATA", `ledger ${ledger.id} participantIds must be an array`);
     if (!Array.isArray(ledger.records)) throw apiError(400, "INVALID_DATA", `ledger ${ledger.id} records must be an array`);
     assertUniqueIds(ledger.records, `record in ledger ${ledger.id}`, "INVALID_DATA");
+
+    for (const record of ledger.records) {
+      // v0.9.6 起不允许图片本体继续进入 data.json。旧 photo 字段直接丢弃。
+      delete record.photo;
+      record.attachments = normalizeAttachmentsForSave(record.attachments, mediaPaths);
+    }
   }
 
-  return {
-    ...cloneJson(data),
-    schemaVersion: data.schemaVersion || 1,
-    updatedAt: new Date().toISOString()
-  };
+  next.schemaVersion = 2;
+  next.updatedAt = new Date().toISOString();
+  return next;
 }
 
 function prepareConfigForSave(config) {
@@ -386,6 +479,44 @@ function prepareConfigForSave(config) {
   return next;
 }
 
+
+
+function normalizeAttachmentsForSave(value, mediaPaths) {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) throw apiError(400, "INVALID_DATA", "record.attachments must be an array");
+
+  const ids = new Set();
+  return value.map((item) => {
+    if (!item || typeof item !== "object") throw apiError(400, "INVALID_DATA", "every attachment must be an object");
+    const id = String(item.id || "").trim();
+    const path = assertMediaPath(item.path);
+    const mime = String(item.mime || "").trim().toLowerCase();
+    const size = Number(item.size || 0);
+    const width = Number(item.width || 0);
+    const height = Number(item.height || 0);
+    const sha = String(item.sha || "").trim();
+    const createdAt = String(item.createdAt || "").trim();
+
+    if (!id) throw apiError(400, "INVALID_DATA", "attachment id must not be empty");
+    if (ids.has(id)) throw apiError(400, "INVALID_DATA", `duplicate attachment id: ${id}`);
+    if (mediaPaths.has(path)) throw apiError(400, "INVALID_DATA", `duplicate attachment path: ${path}`);
+    if (!/^image\/(?:webp|jpeg|png)$/.test(mime)) throw apiError(400, "INVALID_DATA", `unsupported attachment mime: ${mime || "empty"}`);
+    if (!Number.isFinite(size) || size <= 0 || size > 1024 * 1024) throw apiError(400, "INVALID_DATA", `invalid attachment size: ${size}`);
+    if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) throw apiError(400, "INVALID_DATA", "attachment width/height must be positive");
+
+    ids.add(id);
+    mediaPaths.add(path);
+    return { id, path, mime, size: Math.round(size), width: Math.round(width), height: Math.round(height), sha: sha || undefined, createdAt: createdAt || undefined };
+  });
+}
+
+function assertMediaPath(value) {
+  const path = normalizeRepoPath(value);
+  if (!path || !path.startsWith("media/") || path.includes("..") || /[\\\r\n]/.test(path)) {
+    throw apiError(400, "INVALID_MEDIA_PATH", `invalid media path: ${path || "empty"}`);
+  }
+  return path;
+}
 
 function assertUniqueIds(items, label, errorCode) {
   const ids = new Set();
@@ -456,7 +587,10 @@ function base64ToUtf8(base64) {
 }
 
 function utf8ToBase64(value) {
-  const bytes = new TextEncoder().encode(value);
+  return bytesToBase64(new TextEncoder().encode(value));
+}
+
+function bytesToBase64(bytes) {
   let binary = "";
   const chunkSize = 0x8000;
   for (let i = 0; i < bytes.length; i += chunkSize) {

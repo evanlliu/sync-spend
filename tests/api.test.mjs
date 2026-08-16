@@ -264,3 +264,110 @@ test("refreshRates exposes Frankfurter response details instead of hiding HTTP e
     globalThis.fetch = originalFetch;
   }
 });
+
+test("media upload writes compressed binary outside data.json and returns immutable metadata", async () => {
+  const api = createClient();
+  const bytes = Uint8Array.from([0, 1, 2, 3, 250, 251, 252]);
+  const blob = new Blob([bytes], { type: "image/webp" });
+  let request = null;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, options = {}) => {
+    request = { url: new URL(String(input)), options, body: JSON.parse(options.body) };
+    return new Response(JSON.stringify({ content: { sha: "media_sha" }, commit: { sha: "commit_media" } }), {
+      status: 201,
+      headers: { "content-type": "application/json" }
+    });
+  };
+
+  try {
+    const result = await api.uploadMediaFile("media/ledger_1/record_1/img_1.webp", blob);
+    assert.equal(request.options.method, "PUT");
+    assert.equal(request.url.pathname, "/repos/owner/repo/contents/media/ledger_1/record_1/img_1.webp");
+    assert.equal(request.body.branch, "data");
+    assert.equal(Buffer.from(request.body.content, "base64").compare(Buffer.from(bytes)), 0);
+    assert.equal(result.sha, "media_sha");
+    assert.equal(result.path, "media/ledger_1/record_1/img_1.webp");
+    assert.equal(api.mediaUrl(result.path), "https://raw.githubusercontent.com/owner/repo/data/media/ledger_1/record_1/img_1.webp");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("media delete uses the stored blob sha and does not need to read the file first", async () => {
+  const api = createClient();
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, options = {}) => {
+    calls.push({ url: new URL(String(input)), options, body: JSON.parse(options.body) });
+    return new Response(JSON.stringify({ commit: { sha: "delete_commit" } }), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    });
+  };
+
+  try {
+    const result = await api.deleteMediaFile("media/ledger_1/record_1/img_1.webp", "media_sha");
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].options.method, "DELETE");
+    assert.equal(calls[0].body.sha, "media_sha");
+    assert.equal(calls[0].body.branch, "data");
+    assert.equal(result.deleted, true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("saveData removes legacy embedded photo fields and persists only attachment metadata", async () => {
+  const api = createClient();
+  const data = validData();
+  data.ledgers[0].records = [{
+    id: "record_1",
+    type: "expense",
+    photo: "data:image/jpeg;base64,SHOULD_NOT_BE_SAVED",
+    attachments: [{
+      id: "img_1",
+      path: "media/ledger_1/record_1/img_1.webp",
+      mime: "image/webp",
+      size: 123456,
+      width: 1200,
+      height: 900,
+      sha: "media_sha",
+      createdAt: "2026-08-16T20:00:00.000Z"
+    }]
+  }];
+
+  let writtenBody = null;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_input, options = {}) => {
+    writtenBody = JSON.parse(options.body);
+    return new Response(JSON.stringify({ content: { sha: "new_data_sha" }, commit: { sha: "commit_sha" } }), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    });
+  };
+
+  try {
+    const result = await api.saveData(data, "old_sha");
+    const writtenData = JSON.parse(Buffer.from(writtenBody.content, "base64").toString("utf8"));
+    const writtenRecord = writtenData.ledgers[0].records[0];
+    assert.equal(writtenData.schemaVersion, 2);
+    assert.equal("photo" in writtenRecord, false);
+    assert.equal(writtenRecord.attachments.length, 1);
+    assert.equal(writtenRecord.attachments[0].path, "media/ledger_1/record_1/img_1.webp");
+    assert.equal(JSON.stringify(writtenData).includes("data:image"), false);
+    assert.equal(result.data.schemaVersion, 2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("saveData rejects attachments outside the media directory", async () => {
+  const api = createClient();
+  const data = validData();
+  data.ledgers[0].records = [{
+    id: "record_1",
+    type: "expense",
+    attachments: [{ id: "img_1", path: "data/image.webp", mime: "image/webp", size: 10, width: 10, height: 10 }]
+  }];
+  await assert.rejects(() => api.saveData(data, "sha"), (error) => error.code === "INVALID_MEDIA_PATH");
+});

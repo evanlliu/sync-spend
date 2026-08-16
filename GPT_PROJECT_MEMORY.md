@@ -7,7 +7,7 @@
 ## 0. 当前基线
 
 - 项目：Sync Spend
-- 当前版本：`0.9.5`
+- 当前版本：`0.9.6`
 - 本次架构更新时间：2026-08-16
 - 原始附件基线 SHA-256：`ab80654846c9c66f1f42b70a82981fa939fb44f1069dbb7958800bbee00be08c`
 - 技术栈：Vanilla JavaScript ES Modules + CSS + PWA
@@ -22,27 +22,24 @@
 - 前端连接配置：当前 Pages 发布分支 `release1/data/config.json`（代码使用相对路径，因此换发布分支无需改业务代码）
 - 主货币：CNY
 - 汇率：浏览器直接请求 Frankfurter API
-- 自动化测试：Node 内置 `node:test`；`npm run check` = Service Worker + 全部前端 JS 语法检查 + `tests/*.test.mjs` 核心回归（当前 26 项）
+- 自动化测试：Node 内置 `node:test`；`npm run check` = Service Worker + 全部前端 JS 语法检查 + `tests/*.test.mjs` 核心回归（当前 30 项）
 
-### v0.9.5 当前开发重点
+### v0.9.6 当前开发重点
 
-在 v0.9.4 DES Token 配置基线之上，v0.9.5 的核心要求是：**每次加载必须以 GitHub 远端为唯一业务数据源，不允许用本地业务缓存先显示或失败兜底。** 删除安全、事务式写入、ID 迁移、Frankfurter 修复和 DES Token 解密全部保留：
+在 v0.9.5 “每次加载只认 GitHub 最新业务数据”基线上，v0.9.6 的核心要求是：**图片本体从 `data.json` 外置为 data 分支独立 media 文件，JSON 只保留附件元数据；不实现旧 Base64 图片迁移，因为用户确认线上尚未上传图片。**
 
-- 页面启动不再调用 `loadCache()`；`syncSpend.cache` 只作为旧版本遗留 key，在启动时删除。
-- `store.js -> setBootstrap()` 只把本次 GitHub 响应写入当前页面 state，不再写 localStorage。
-- `loadClientConfig()` 每次启动都实时请求当前 Pages 发布分支的 `data/config.json`，使用 `cache: "no-store"`；不再读写 `syncSpend.githubConfig.v2`，并会清理旧 v1/v2 key。
-- `ApiClient.bootstrap()` 每次并行 GET data 分支 `data/data.json` 与 `data/config.json`；Contents API GET 使用 `cache: "no-store"`，只保留合法 `ref=<data branch>` 参数，不追加 `_ts`。
-- GitHub 启动读取失败时必须显示加载错误，不能展示旧账本、旧 config、旧 SHA 或旧汇率。
-- localStorage 当前只允许保存 UI 偏好（语言、最后打开账本、最后使用币种、安装提示关闭标记），这些值不能成为账务数据来源。
-- Service Worker v095 对 App Shell 使用 network-first；只有静态外壳断网时可回退 Cache Storage。跨域 GitHub/Frankfurter、同源 `data/config.json` 与 `data/data.json` 永远不使用 Cache Storage 兜底。
-- Service Worker 注册使用 `updateViaCache: "none"`；页面如果通过 BFCache 恢复（`pageshow.persisted`），立即执行 `refreshData()`，保证前进/后退恢复后也重新读取 GitHub。
-- 写操作仍是“clone 副本 -> 修改副本 -> GitHub PUT -> 成功后替换 state”，并依赖 GitHub SHA 乐观锁；页面加载后若远端被其他设备修改，保存会由 409 阻止覆盖。
-- 删除消费者仍为引用感知：历史已使用只能停用；从未使用才能永久删除。
-- 历史 `splitParticipantIds` 仍是记录快照；legacy amount 无快照时优先从 `splitAmountsCny` keys 恢复。
-- 消费/结算记录仍软删除并写 `deletedAt`；已归档账本才允许账本级硬删除。
-- `migrateDataIntegrity()` 只对本次 GitHub bootstrap 数据做运行期迁移；重复/缺失 ledger/record ID 不删除记录，后续真实业务 PUT 时一起落盘。
-- Frankfurter v2 `/rates` 严禁自定义 `_ts/cacheBust` 参数；只用 `fetch(...,{cache:"no-store"})`。
-- GitHub Token 配置继续是 DES-CBC-PKCS7 / UTF-16LE / Key+IV=`ELIU` 的 Base64 密文对象；真实 PAT 只在 `ApiClient` 当前页面内存存在。
+- 业务真相源仍是 GitHub data 分支；启动严格 remote-first，不恢复任何 localStorage 账务缓存。
+- 新图片在浏览器内存中通过 `compressImageFile()` 缩放压缩：最长边默认 1600，质量读取业务 config `app.imageQuality`，目标大小默认 972800 bytes，硬上限 1MB；优先 WebP，浏览器不支持时回退 JPEG。
+- 图片文件路径：`media/<ledgerId>/<recordId>/<imageId>.webp|jpg`；路径组件会清洗，imageId 使用 `uid("img")`，文件上传后视为 immutable，不覆盖旧图片。
+- `data.json` 的 expense 使用 `attachments[]` 保存 `id/path/mime/size/width/height/sha/createdAt`；不再保存 `record.photo` Base64。保存前 API 会删除 `photo` 字段并严格校验附件必须位于 `media/`、≤1MB、尺寸/mime 合法、path 不重复。
+- 新增/编辑带图片采用媒体事务：先上传新图片，再 PUT `data.json`；如果 JSON 保存失败或 SHA 409，则自动尝试 DELETE 刚上传的图片回滚。
+- 替换/删除图片时不先删旧图：新 JSON 成功后才清理旧 media。清理失败只留下孤儿文件，不能把已经成功保存的账务数据回滚。
+- expense/settlement 软删除继续保留图片；永久删除已归档 ledger 时先成功从 `data.json` 移除账本，再逐个清理该账本引用的 media。
+- 列表展示读取 `attachments[0]`，通过 `raw.githubusercontent.com` URL + `loading=lazy` 按需加载；因此启动下载 `data.json` 时不再携带全部历史图片。
+- `data/data.json` schemaVersion 从 1 升为 2；旧 schema 1 仍能读取，下一次真实业务保存自动写为 schema 2。
+- GitHub JSON GET 仍保留 raw fallback（不是为了图片，而是防止长期 history/软删除导致 JSON 增大）。
+- 删除安全、事务式 state commit、ID 迁移、Frankfurter 严格参数修复、DES Token 解密规则全部继续保留。
+- 当前 `npm run check` 共 30 项测试，其中 API/media 12 项。
 
 ### v0.9.0 的关键架构变更
 
@@ -77,12 +74,12 @@ GitHub Pages 浏览器 -> GitHub Contents API
 
 版本发布时必须统一检查：
 
-- `package.json` -> `0.9.5`
-- `src/js/version.js` -> `APP_VERSION = "0.9.5"`
+- `package.json` -> `0.9.6`
+- `src/js/version.js` -> `APP_VERSION = "0.9.6"`
 - `index.html` -> title / Apple Web App title
 - `404.html` -> title / Apple Web App title
 - `manifest.webmanifest` -> name / short_name
-- `service-worker.js` -> `CACHE_NAME = "sync-spend-shell-v095"`
+- `service-worker.js` -> `CACHE_NAME = "sync-spend-shell-v096"`
 - `README.md`
 - 本文件 `GPT_PROJECT_MEMORY.md`
 
@@ -240,7 +237,7 @@ https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}
 - 使用 `Accept: application/vnd.github.raw+json`
 - SHA 仍来自第一次元数据请求
 
-这个兼容逻辑非常重要，因为流水图片目前直接 base64 存在 JSON 中，`data.json` 很容易超过 1 MB。
+这个兼容逻辑继续保留。v0.9.6 图片已外置，不再是 JSON 膨胀主因；但长期软删除记录和 history 仍可能让 `data.json` 变大，因此 raw fallback 不能删。
 
 ### 4.3 文件写入
 
@@ -271,7 +268,9 @@ https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}
 - 每个 ledger 必须有 `participantIds[]` / `records[]`
 - 同一 ledger 内 record id 必须非空且唯一
 - 写入 clone，不直接让 API 层修改 state 引用
-- 确保 `schemaVersion`
+- 删除旧 `record.photo`，统一把附件写成 `attachments[]` 元数据
+- attachment path 必须位于 `media/`；mime 仅允许 WebP/JPEG/PNG；size 必须 `0 < size <= 1MB`；width/height 必须为正；全局 media path 不得重复
+- 写入 `schemaVersion: 2`
 - 写入新的 `updatedAt`
 
 `saveConfig()`：
@@ -283,6 +282,23 @@ https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}
 - 删除 `cloudflare` / `github`
 - 确保 `schemaVersion`
 
+### 4.5 图片文件 API（v0.9.6）
+
+`ApiClient.uploadMediaFile(path, blob)`：
+
+- 只允许 `media/` 路径；拒绝 `..`、反斜杠、换行等危险路径。
+- Blob 必须非空且 ≤1MB。
+- 浏览器将二进制转 Base64 后使用 GitHub Contents API PUT；新文件不传 SHA，因为 path 必须唯一。
+- 返回 Git blob `sha` 并写入 attachment metadata。
+
+`ApiClient.deleteMediaFile(path, sha)`：
+
+- 有 attachment sha 时直接 DELETE；没有 sha 才 GET metadata。
+- 404 按已不存在处理，不把清理任务误判为业务保存失败。
+- 编辑旧图和硬删账本都在 JSON 成功后才调用。
+
+`ApiClient.mediaUrl(path)` 返回当前 public repo/data branch 的 `raw.githubusercontent.com` URL，用于 `<img loading="lazy">`。当前用户仓库是公开仓库；如果以后改为私有仓库，需要重新设计带认证的图片读取方式，不能继续假设 raw URL 可匿名访问。
+
 ## 5. 数据模型
 
 ### 5.1 data 分支 `data/data.json`
@@ -291,7 +307,7 @@ https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}
 
 ```js
 {
-  schemaVersion: 1,
+  schemaVersion: 2,
   updatedAt: string | null,
   ledgers: Ledger[]
 }
@@ -332,7 +348,7 @@ https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}
   splitParticipantIds: string[],
   splitAmountsCny: { [consumerId]: number },
   note: string,
-  photo: string | null,
+  attachments: Attachment[],
   createdAt: string,
   updatedAt: string,
   history: HistoryItem[],
@@ -341,7 +357,22 @@ https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}
 }
 ```
 
-图片目前是压缩 JPEG Data URL / base64，直接嵌入 JSON。
+### Attachment
+
+```js
+{
+  id: string,
+  path: "media/<ledger>/<record>/<imageId>.webp|jpg",
+  mime: "image/webp" | "image/jpeg" | "image/png",
+  size: number,
+  width: number,
+  height: number,
+  sha?: string,
+  createdAt?: string
+}
+```
+
+当前 UI 每条 expense 只选择/展示一张图片，但数据结构使用 `attachments[]`，便于以后扩展；不要重新引入 `photo: data:image/...`。
 
 ### 5.3 HistoryItem
 
@@ -517,15 +548,40 @@ v0.9.3 的关键兼容规则：
 
 ## 8. 图片逻辑
 
-`utils.js -> imageFileToDataUrl()`：
+### 8.1 压缩
 
-- 优先 `createImageBitmap`
-- 失败时回退 `HTMLImageElement`
-- 最大宽度由业务 config 的 `app.imageMaxWidth` 控制，默认 1600
-- JPEG quality 默认 0.72
-- 保存为 Data URL
+`utils.js -> compressImageFile()`：
 
-这会导致 `data/data.json` 快速增大，因此 `api.js` 的 raw 大文件读取逻辑不能随便删。
+- 优先 `createImageBitmap`，失败回退 `HTMLImageElement`。
+- 以最长边控制尺寸，默认 1600。
+- 初始质量来自 `app.imageQuality`，默认 0.72。
+- 目标大小来自 `app.imageMaxBytes`，默认 972800 bytes；绝对不能超过 1MB。
+- Canvas 优先输出 WebP；不支持 WebP 时回退 JPEG。
+- 如果仍过大，先逐步降低质量，再缩小尺寸，最多 8 次。
+- 选择图片后只生成内存 Blob + Object URL 预览，不写 JSON、不写 localStorage。`imageSelectionVersion` 防止连续选图时旧异步结果覆盖新图；submit 必须先 `await imageProcessingPromise`，避免压缩尚未结束就保存成无图记录。modal 关闭时递增 selection version 并 revoke preview URL。
+
+### 8.2 保存事务
+
+`showExpenseModal()` 保存带图片 expense：
+
+1. 基于最新内存 data 找到 ledger/record，并为新 record 分配最终唯一 ID。
+2. 为图片生成唯一 `img_*` ID 和 `media/<ledger>/<record>/<img>.<ext>`。
+3. `api.uploadMediaFile()` 先创建 GitHub media 文件。
+4. 注册 rollback：如果后续 `saveData()` 失败，DELETE 刚上传文件。
+5. record 只写 `attachments[]` 元数据。
+6. `data.json` PUT 成功后，若是替换/删除旧图，再执行 afterCommit DELETE 旧文件。
+
+`commitDataMutation()` v0.9.6 支持两类远程事务 callback：
+
+- `transaction.onRollback(fn)`：主 JSON 保存失败时逆序执行，主要用于删除本次刚上传的 media。
+- `transaction.afterCommit(fn)`：主 JSON 成功后执行，主要用于清理不再引用的旧 media。afterCommit 失败只提示 `mediaCleanupFailed`，不能把已成功的 JSON mutation 当作失败。
+
+### 8.3 删除语义
+
+- record 软删除：附件继续存在且 metadata 保留。
+- 编辑点“删除图片”：只是在草稿中移除 attachment；JSON 成功后才删旧 media。
+- 永久删除 archived ledger：先硬删 ledger JSON，再清理该 ledger 所有 `attachments` 引用。
+- 当前无旧 Base64 图片，因此没有迁移流程；`saveData()` 会无条件丢弃旧 `record.photo`，防止 Base64 再进入数据文件。
 
 ## 9. 本地存储和 PWA
 
@@ -548,7 +604,7 @@ v0.9.3 的关键兼容规则：
 
 ### 9.2 Service Worker
 
-`service-worker.js` 当前 cache name：`sync-spend-shell-v095`。
+`service-worker.js` 当前 cache name：`sync-spend-shell-v096`。
 
 规则：
 
@@ -628,9 +684,13 @@ Pages 发布配置不再出现 PAT 明文，但密文、Key=`ELIU` 和解密代�
 
 v0.9.1 已避免“删除 consumer 同时写 config+data”的设计：有引用 consumer 只改 config 为 inactive，不再修改所有 ledger。当前 CRUD 绝大多数单次只写一个文件。但未来若新增必须同时改 `data.json` + 业务 `config.json` 的功能，要明确处理半成功问题，不能假设 GitHub 两次 PUT 原子提交。
 
-### D. 软删除记录会持续增大 data.json
+### D. 软删除/history 仍会持续增大 data.json，但图片已不再放 JSON
 
-expense / settlement 删除不会物理移除，而是 `deleted:true` + history。这样对审计安全，但长期会增大 JSON；图片又直接 base64 存在 record.photo，文件增长会更快。未来若做回收站清理/图片外置，必须明确“硬删除”的不可恢复语义。
+expense / settlement 删除仍是 `deleted:true` + history，因此长期运行后 `data.json` 仍会增长；v0.9.6 已把图片本体外置到 `media/`，避免图片导致 JSON 指数式膨胀。未来若做回收站清理，必须明确硬删除不可恢复语义，并同时处理对应 media；不要为了缩小 JSON 擅自删历史记录。
+
+### D2. media 可能产生孤儿文件
+
+上传成功但主 JSON 保存失败时会自动 rollback；JSON 保存成功后旧 media 清理失败时，为保护账务正确性不会回滚 JSON，因此可能留下孤儿 media。当前 UI 会提示清理失败。未来可做显式“扫描孤儿 media / 清理”工具，但不能在启动阶段无确认地删除文件。
 
 ### E. pre-v0.9.1 已被旧代码破坏的历史参与人无法自动推断
 
@@ -670,6 +730,10 @@ v0.9.1 能保证未来“移除账本参与人/停用消费者”不再改写历
 16. 历史重复/缺失 ledger/record ID 必须先通过 `migrateDataIntegrity()` 无损修复；不能直接删除冲突记录，也不能关闭 `assertUniqueIds()`。
 17. record ID 迁移不能修改 `createdAt/updatedAt`，避免仅因数据修复改变记录排序和业务时间。
 18. 不写无调用函数、重复兼容层或没有实际用途的配置项；新实现替代旧实现时清掉旧路径。
+19. 图片本体禁止进入 `data.json` / localStorage；expense 只能保存 `attachments[]` 元数据，media path 必须位于 `media/`。
+20. 带图片 mutation 必须遵守“新 media 先上传 → JSON 保存 → 旧 media 后清理”；JSON 失败必须尝试回滚本次新上传文件。
+21. record 软删除不得物理删除附件；只有图片从已成功保存的 record 中解除引用，或 archived ledger 已成功硬删除后，才能清理对应 media。
+22. 单个压缩图片必须 ≤1MB；不要提高到 GitHub Contents API 大文件边界来掩盖压缩问题。
 
 ## 14. 后续修改标准流程
 
@@ -709,31 +773,39 @@ npm run check
 
 ## 16. 当前验证结果（2026-08-16）
 
-v0.9.5 当前交付必须确认：
+v0.9.6 当前交付必须确认：
 
-- `npm run check` 通过：Service Worker + 全部前端 JS syntax check + 26 个 `node:test` 回归用例。
-- 测试构成：8 calculator + 8 API + 3 crypto + 4 migration + 3 cache-policy。
-- `data/config.json`、`data/data.json`、`manifest.webmanifest` JSON 可解析。
-- `worker.js` 不存在，package 无 wrangler / deploy:worker，运行代码无 `/api/*`。
-- 版本位置统一为 `0.9.5`：package/version.js/index/404/manifest；PWA cache name = `sync-spend-shell-v095`。
-- calculator 8 项覆盖：100/3 分币、历史 split participant、legacy amount split、历史参与人余额、缺失 consumer 仍计算、consumerUsage 历史引用、软删除无统计影响、settlement 归零。
-- API 8 项覆盖：duplicate ID/code 拒绝、旧 cloudflare/github 字段清理、SHA/branch 写入、调用方对象不被修改、旧重复 record 迁移后同次保存、Frankfurter 合法 query、HTTP 错误正文诊断。
-- crypto 3 项覆盖：.NET 兼容 DES 向量、当前发布配置只含密文且可解密成 PAT 形态、错误 Key/padding 拒绝。
-- migration 4 项覆盖：活动/软删除重复 record 不丢失、确定性修复与避碰、缺失 record/重复 ledger ID 修复、干净数据零改动。
-- cache-policy 3 项覆盖：GitHub bootstrap GET 强制 `cache:no-store` 且 URL 无 `_ts`；Pages 连接配置网络失败不读取 localStorage；`setBootstrap()` 不写业务数据缓存。
-- `src/js/store.js` 已无 `loadCache/updateCache/cacheMode/full/lite/minimal` 运行路径，只保留旧 `syncSpend.cache` 删除逻辑。
-- `src/js/api.js -> loadClientConfig()` 不再读写 `syncSpend.githubConfig.v2`，会清理 v1/v2 后实时读取 Pages `data/config.json`。
-- 初始 GitHub bootstrap 失败时页面显示错误，不展示旧业务 state；当前业务 data/config/rates/SHA 均只存在页面内存。
-- localStorage 当前仅用于 UI 偏好，不允许保存账务 data/config/rates/SHA。
-- Service Worker 对 GitHub / Frankfurter 不缓存；同源 `data/config.json` / `data/data.json` network-only；App Shell 在线 network-first。
-- `release1` 是用户当前 GitHub Pages 发布分支；代码配置仍指向业务 `branch: data`，两者不能混淆。
-- app mutation 统一使用 `commitDataMutation()` / `commitConfigMutation()`，GitHub PUT 成功后才替换 state。
-- 删除 consumer 不修改 `ledger.participantIds`；编辑账本参与人前调用 `materializeLegacySplitSnapshots()`。
-- expense/settlement delete 写 `deleted` + `deletedAt` + history + ledger.updatedAt。
-- amount split 必须完整分配；日期默认使用本地日期；移动日期语言读取 `getLanguage()`。
-- Frankfurter URL 不包含 `_ts`；错误写入 `rates.error` 并由 UI 展示。
+- `npm run check` 通过：Service Worker + 全部前端 JS syntax check + 30 个 `node:test` 回归用例。
+- 测试构成：8 calculator + 12 API/media + 3 crypto + 4 migration + 3 cache-policy。
+- API/media 新增覆盖：独立二进制上传 Base64 请求体、media path/branch、stored SHA 删除、旧 `photo` 字段不写回、attachment metadata/schemaVersion 2、非法非-media path 拒绝。
+- `data/config.json`、`data/data.json`、`manifest.webmanifest` JSON 可解析；默认 `data/data.json` schemaVersion=2。
+- 版本统一为 `0.9.6`：package/version.js/index/404/manifest；PWA cache name=`sync-spend-shell-v096`。
+- 源码不再存在 `imageFileToDataUrl()` / Canvas `toDataURL()` / `record.photo` 展示路径；只有保存清理层明确 `delete record.photo`，防止旧 Base64 字段回写。
+- 图片上传文件固定在 `media/<ledger>/<record>/...`，压缩 Blob ≤1MB；data JSON 仅 attachment metadata。
+- `commitDataMutation()` 继续 clone + SHA PUT + 成功替换 state，并新增 media rollback/afterCommit cleanup 事务 callback。
+- record 软删除不清理 media；永久删除 archived ledger JSON 成功后才清理引用 media。
+- 启动仍严格 GitHub remote-first；localStorage 只保存 UI 偏好，业务 data/config/rates/SHA 不缓存。
+- Service Worker 对 GitHub / Frankfurter 不缓存；同源连接 config/data 占位 network-only；App Shell network-first。
+- `release1` 仍是用户当前 GitHub Pages 发布分支；业务 `branch: data` 不随 Pages 分支改变。
+- Frankfurter URL 不包含 `_ts`；DES Token 规则仍为 CBC/PKCS7/UTF-16LE/ELIU。
 
 ## 17. 修改记录
+
+### 2026-08-16 — v0.9.6：图片外置到 GitHub media，data.json 只存元数据
+
+用户确认当前没有历史上传图片，要求直接改变图片存储方式，不做旧 Base64 迁移。完成：
+
+- 删除 `imageFileToDataUrl()`，新增 `compressImageFile()`：最长边缩放、WebP 优先/JPEG fallback、质量+尺寸迭代压缩、目标 950KB/硬上限 1MB。
+- expense 数据由 `photo` 改为 `attachments[]`；`data.json` schemaVersion 升为 2。
+- `ApiClient` 新增 `uploadMediaFile()` / `deleteMediaFile()` / `readContentMetadata()` / `mediaUrl()`；独立文件放 data 分支 `media/<ledger>/<record>/<imageId>.<ext>`。
+- `saveData()` 保存前丢弃任何旧 `record.photo`，严格校验 attachment id/path/mime/size/dimensions，禁止 Base64 图片继续进入 JSON。
+- 新增/编辑保存先上传 media；主 JSON 失败时自动 rollback 刚上传 media。替换/删除旧图片时主 JSON 成功后再清旧 media。
+- `commitDataMutation()` 增加 `onRollback` 与 `afterCommit` 远程事务 callback；清旧 media 失败只提示，不回滚成功账务数据。
+- 软删除 record 保留图片；永久删除 archived ledger 时先删除账本 JSON，再清理其所有引用 media。
+- 图片展示从 attachment path 生成 raw GitHub URL，并使用 `loading=lazy` / `decoding=async`。
+- preview 使用 Object URL，modal 关闭时 revoke；连续选图使用 selection version 防异步乱序，保存会等待当前图片压缩 promise；不写 localStorage。
+- PWA cache bump 为 `sync-spend-shell-v096`；版本统一 0.9.6。
+- API/media 新增 4 项测试，当前 `npm run check` 30/30。
 
 ### 2026-08-16 — v0.9.5：业务数据强制 GitHub 最新、移除本地缓存
 
@@ -761,7 +833,7 @@ v0.9.5 当前交付必须确认：
 - `api.js` 严格拒绝明文 token 字符串，统一在 `applyClientConfig()` 解密；GitHub headers 只读取内存中的解密值。
 - client config localStorage 从 v1 升级为 v2，只缓存密文对象；成功加载新静态配置时删除 v1，避免继续使用旧的明文/已撤销 Token 缓存。
 - 设置页显示 Token 已加密和算法信息，不显示真实明文。
-- 新增 3 项 crypto tests，并增加 1 项明文 token 配置拒绝测试；总测试 26/26；版本升到 0.9.4，PWA cache bump 为 `sync-spend-shell-v094` 并缓存 crypto.js。
+- 新增 3 项 crypto tests，并增加 1 项明文 token 配置拒绝测试；总测试 23/23；版本升到 0.9.4，PWA cache bump 为 `sync-spend-shell-v094` 并缓存 crypto.js。
 - 重要运行事实：当前密文对应用户之前已经出现 `Bad credentials` 的那枚 PAT；如果 GitHub 已撤销它，必须由用户新建 PAT 后用相同规则重新加密并替换 `encrypted`，代码修改本身不会让被撤销的 PAT 恢复。
 
 ### 2026-08-16 — v0.9.3：Frankfurter v2 严格参数兼容与错误诊断
@@ -836,4 +908,4 @@ v0.9.5 当前交付必须确认：
 
 ### 2026-08-16 — 建立 GPT 长期项目记忆
 
-对 v0.8.8 原始附件完成项目结构、数据模型、分摊/结算、缓存、Worker/GitHub 链路的基线梳理，并建立本文件。该条作为历史来源保留；架构事实以 v0.9.5 当前章节为准。
+对 v0.8.8 原始附件完成项目结构、数据模型、分摊/结算、缓存、Worker/GitHub 链路的基线梳理，并建立本文件。该条作为历史来源保留；架构事实以 v0.9.6 当前章节为准。
