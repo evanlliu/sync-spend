@@ -1,0 +1,11 @@
+{
+  "name": "sync-spend",
+  "version": "0.9.5",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npm run check:syntax && npm test",
+    "check:syntax": "node --check service-worker.js && node --check src/js/api.js && node --check src/js/app.js && node --check src/js/calculator.js && node --check src/js/crypto.js && node --check src/js/currency.js && node --check src/js/i18n.js && node --check src/js/migration.js && node --check src/js/store.js && node --check src/js/utils.js && node --check src/js/version.js",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

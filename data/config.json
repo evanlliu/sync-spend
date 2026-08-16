@@ -1,0 +1,16 @@
+{
+  "github": {
+    "owner": "evanlliu",
+    "repo": "sync-spend",
+    "branch": "data",
+    "dataPath": "data/data.json",
+    "configPath": "data/config.json",
+    "token": {
+      "encrypted": "cNQSZox6Y8hRlh8N3km9XQXVrS2T1BKFilAxOfshonV+BiEhBE/6vipyRoG7R+m0mpk8Nl7DIBFmSdZ1nCIr8RwsoKbSQXLKPWzF6Y35Xr07x4DQs5ZUCEmuB1hraqHMxA44Y8dolJK/IpFekwyqFzodEB992ZolzSC0NT6TbkHL+l/3/OT4Dnpa8uEdfct8aSnEoIO22odFk14IvmBqD8IK1Uya9ph+XLqsn0CYdClROwESj+mHmkmOKiXlHKab",
+      "algorithm": "DES-CBC-PKCS7",
+      "encoding": "UTF-16LE",
+      "key": "ELIU",
+      "iv": "ELIU"
+    }
+  }
+}
