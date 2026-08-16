@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-16T18:32:03.560Z",
+  "updatedAt": "2026-08-16T18:32:13.390Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -32,7 +32,7 @@
           "photo": null,
           "createdAt": "2026-08-16T18:17:20.242Z",
           "type": "expense",
-          "updatedAt": "2026-08-16T18:21:54.113Z",
+          "updatedAt": "2026-08-16T18:32:14.386Z",
           "history": [
             {
               "action": "created",
@@ -102,6 +102,11 @@
             {
               "action": "deleted",
               "at": "2026-08-16T18:21:54.113Z",
+              "summary": "周孝双 $100.00 / ¥39.61"
+            },
+            {
+              "action": "deleted",
+              "at": "2026-08-16T18:32:14.386Z",
               "summary": "周孝双 $100.00 / ¥39.61"
             }
           ],
