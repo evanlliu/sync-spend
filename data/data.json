@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-17T00:33:04.406Z",
+  "updatedAt": "2026-08-18T04:42:04.981Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -12,6 +12,54 @@
         "consumer_msw4kcs7_1yqf17i36l1ee"
       ],
       "records": [
+        {
+          "id": "settlement_msy6em2b_nhoxh11h90sbs",
+          "type": "settlement",
+          "date": "2026-08-17",
+          "fromConsumerId": "consumer_evan",
+          "toConsumerId": "consumer_mr8b5dem_r23g5l93jxnr",
+          "amount": 282.36,
+          "currency": "CNY",
+          "amountCny": 282.36,
+          "rateToCny": 1,
+          "rateSource": "settlement",
+          "settlementBatchId": "settle_batch_msy6em2b_1vjmesx1vbi2ro",
+          "note": "",
+          "createdAt": "2026-08-18T04:42:04.978Z",
+          "updatedAt": "2026-08-18T04:42:04.978Z",
+          "history": [
+            {
+              "action": "created",
+              "at": "2026-08-18T04:42:04.978Z",
+              "summary": "刘彬 向 吴恒 支付了 ¥282.36"
+            }
+          ],
+          "attachments": []
+        },
+        {
+          "id": "settlement_msy6em2c_2bdxue16nb1o2",
+          "type": "settlement",
+          "date": "2026-08-17",
+          "fromConsumerId": "consumer_msw4kcs7_1yqf17i36l1ee",
+          "toConsumerId": "consumer_mr8b5dem_r23g5l93jxnr",
+          "amount": 282.34,
+          "currency": "CNY",
+          "amountCny": 282.34,
+          "rateToCny": 1,
+          "rateSource": "settlement",
+          "settlementBatchId": "settle_batch_msy6em2b_1vjmesx1vbi2ro",
+          "note": "",
+          "createdAt": "2026-08-18T04:42:04.978Z",
+          "updatedAt": "2026-08-18T04:42:04.978Z",
+          "history": [
+            {
+              "action": "created",
+              "at": "2026-08-18T04:42:04.978Z",
+              "summary": "周孝双 向 吴恒 支付了 ¥282.34"
+            }
+          ],
+          "attachments": []
+        },
         {
           "id": "record_mswi22d6_1qp9mjj29jx3",
           "date": "2026-08-16",
@@ -404,7 +452,7 @@
         }
       ],
       "createdAt": "2026-08-16T18:16:15.021Z",
-      "updatedAt": "2026-08-17T00:33:03.007Z"
+      "updatedAt": "2026-08-18T04:42:04.978Z"
     },
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
