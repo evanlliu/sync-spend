@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-23T19:40:52.755Z",
+  "updatedAt": "2026-08-23T19:41:39.047Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -69,15 +69,31 @@
           ],
           "splitAmountsCny": {},
           "note": "牛奶，垃圾袋",
-          "attachments": [],
+          "attachments": [
+            {
+              "id": "img_mt67qofq_1pb4dpk1odifs5",
+              "path": "media/ledger_msw4lxnw_lskfuw1c0y3iz/record_mt67mj37_1pkzdwuw40iwm/img_mt67qofq_1pb4dpk1odifs5.jpg",
+              "mime": "image/jpeg",
+              "size": 213872,
+              "width": 736,
+              "height": 1600,
+              "sha": "9e8f6798435bee3cc28d8b661ed7de36528825d6",
+              "createdAt": "2026-08-23T19:41:36.948Z"
+            }
+          ],
           "createdAt": "2026-08-23T19:38:23.396Z",
           "type": "expense",
-          "updatedAt": "2026-08-23T19:38:45.388Z",
+          "updatedAt": "2026-08-23T19:41:36.948Z",
           "history": [
             {
               "action": "created",
               "at": "2026-08-23T19:38:45.388Z",
               "summary": "刘彬 $400.00 / ¥158.80"
+            },
+            {
+              "action": "updated",
+              "at": "2026-08-23T19:41:36.948Z",
+              "summary": "修改前: 刘彬 $400.00 / ¥158.80 → 修改后: 刘彬 $400.00 / ¥158.80"
             }
           ]
         },
@@ -521,7 +537,7 @@
         }
       ],
       "createdAt": "2026-08-16T18:16:15.021Z",
-      "updatedAt": "2026-08-23T19:40:51.318Z"
+      "updatedAt": "2026-08-23T19:41:36.948Z"
     },
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
