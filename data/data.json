@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-23T19:38:45.391Z",
+  "updatedAt": "2026-08-23T19:40:52.755Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -12,6 +12,46 @@
         "consumer_msw4kcs7_1yqf17i36l1ee"
       ],
       "records": [
+        {
+          "id": "record_mt67p6zq_1exaic61vge9io",
+          "date": "2026-08-23",
+          "consumerId": "consumer_mr8b5dem_r23g5l93jxnr",
+          "amount": 530.79,
+          "currency": "MXN",
+          "amountCny": 210.72,
+          "rateToCny": 0.397,
+          "rateSource": "live",
+          "splitMode": "equal",
+          "splitParticipantIds": [
+            "consumer_evan",
+            "consumer_mr8b5dem_r23g5l93jxnr",
+            "consumer_msw4kcs7_1yqf17i36l1ee"
+          ],
+          "splitAmountsCny": {},
+          "note": "",
+          "attachments": [
+            {
+              "id": "img_mt67pp88_1pihaxp16xgw98",
+              "path": "media/ledger_msw4lxnw_lskfuw1c0y3iz/record_mt67p6zq_1exaic61vge9io/img_mt67pp88_1pihaxp16xgw98.jpg",
+              "mime": "image/jpeg",
+              "size": 117929,
+              "width": 737,
+              "height": 1600,
+              "sha": "12f60b021ccc50b35b8e611683a6ea5f91fb63a8",
+              "createdAt": "2026-08-23T19:40:51.318Z"
+            }
+          ],
+          "createdAt": "2026-08-23T19:40:27.687Z",
+          "type": "expense",
+          "updatedAt": "2026-08-23T19:40:51.318Z",
+          "history": [
+            {
+              "action": "created",
+              "at": "2026-08-23T19:40:51.318Z",
+              "summary": "吴恒 $530.79 / ¥210.72"
+            }
+          ]
+        },
         {
           "id": "record_mt67mj37_1pkzdwuw40iwm",
           "date": "2026-08-23",
@@ -481,7 +521,7 @@
         }
       ],
       "createdAt": "2026-08-16T18:16:15.021Z",
-      "updatedAt": "2026-08-23T19:38:45.388Z"
+      "updatedAt": "2026-08-23T19:40:51.318Z"
     },
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
