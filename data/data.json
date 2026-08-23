@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-18T04:42:04.981Z",
+  "updatedAt": "2026-08-23T19:38:45.391Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -12,6 +12,35 @@
         "consumer_msw4kcs7_1yqf17i36l1ee"
       ],
       "records": [
+        {
+          "id": "record_mt67mj37_1pkzdwuw40iwm",
+          "date": "2026-08-23",
+          "consumerId": "consumer_evan",
+          "amount": 400,
+          "currency": "MXN",
+          "amountCny": 158.8,
+          "rateToCny": 0.397,
+          "rateSource": "live",
+          "splitMode": "equal",
+          "splitParticipantIds": [
+            "consumer_evan",
+            "consumer_mr8b5dem_r23g5l93jxnr",
+            "consumer_msw4kcs7_1yqf17i36l1ee"
+          ],
+          "splitAmountsCny": {},
+          "note": "牛奶，垃圾袋",
+          "attachments": [],
+          "createdAt": "2026-08-23T19:38:23.396Z",
+          "type": "expense",
+          "updatedAt": "2026-08-23T19:38:45.388Z",
+          "history": [
+            {
+              "action": "created",
+              "at": "2026-08-23T19:38:45.388Z",
+              "summary": "刘彬 $400.00 / ¥158.80"
+            }
+          ]
+        },
         {
           "id": "settlement_msy6em2b_nhoxh11h90sbs",
           "type": "settlement",
@@ -452,7 +481,7 @@
         }
       ],
       "createdAt": "2026-08-16T18:16:15.021Z",
-      "updatedAt": "2026-08-18T04:42:04.978Z"
+      "updatedAt": "2026-08-23T19:38:45.388Z"
     },
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
