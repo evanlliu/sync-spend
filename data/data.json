@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-09-07T01:21:42.245Z",
+  "updatedAt": "2026-09-09T04:59:01.223Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -607,8 +607,8 @@
           "consumerId": "consumer_mr8b5dem_r23g5l93jxnr",
           "amount": 588.5,
           "currency": "MXN",
-          "amountCny": 233.46,
-          "rateToCny": 0.3967,
+          "amountCny": 233.05,
+          "rateToCny": 0.396,
           "rateSource": "live",
           "splitMode": "equal",
           "splitParticipantIds": [
@@ -631,12 +631,17 @@
           ],
           "createdAt": "2026-09-07T01:21:23.281Z",
           "type": "expense",
-          "updatedAt": "2026-09-07T01:21:40.650Z",
+          "updatedAt": "2026-09-09T04:59:01.221Z",
           "history": [
             {
               "action": "created",
               "at": "2026-09-07T01:21:40.650Z",
               "summary": "吴恒 $588.50 / ¥233.46"
+            },
+            {
+              "action": "updated",
+              "at": "2026-09-09T04:59:01.221Z",
+              "summary": "修改前: 吴恒 $588.50 / ¥233.46 → 修改后: 吴恒 $588.50 / ¥233.05"
             }
           ]
         },
@@ -1052,7 +1057,7 @@
         }
       ],
       "createdAt": "2026-07-05T21:36:20.135Z",
-      "updatedAt": "2026-09-07T01:21:40.650Z"
+      "updatedAt": "2026-09-09T04:59:01.221Z"
     }
   ]
 }
