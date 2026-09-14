@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-09-14T05:25:26.728Z",
+  "updatedAt": "2026-09-14T05:25:42.974Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -617,15 +617,31 @@
           ],
           "splitAmountsCny": {},
           "note": "",
-          "attachments": [],
+          "attachments": [
+            {
+              "id": "img_mu0suoxv_1y2zduo10a3ple",
+              "path": "media/ledger_mr8b9gvb_w7o5ak1x6dv9i/record_mu0stypr_rejlpnx19xth/img_mu0suoxv_1y2zduo10a3ple.jpg",
+              "mime": "image/jpeg",
+              "size": 447003,
+              "width": 1200,
+              "height": 1600,
+              "sha": "9baa419aaae94fbffbbe21dbf7bcc39c228cbc41",
+              "createdAt": "2026-09-14T05:25:41.443Z"
+            }
+          ],
           "createdAt": "2026-09-14T05:25:07.456Z",
           "type": "expense",
-          "updatedAt": "2026-09-14T05:25:26.725Z",
+          "updatedAt": "2026-09-14T05:25:41.443Z",
           "history": [
             {
               "action": "created",
               "at": "2026-09-14T05:25:26.725Z",
               "summary": "刘彬 $550.00 / ¥217.36"
+            },
+            {
+              "action": "updated",
+              "at": "2026-09-14T05:25:41.443Z",
+              "summary": "修改前: 刘彬 $550.00 / ¥217.36 → 修改后: 刘彬 $550.00 / ¥217.36"
             }
           ]
         },
@@ -1085,7 +1101,7 @@
         }
       ],
       "createdAt": "2026-07-05T21:36:20.135Z",
-      "updatedAt": "2026-09-14T05:25:26.725Z"
+      "updatedAt": "2026-09-14T05:25:41.443Z"
     }
   ]
 }
