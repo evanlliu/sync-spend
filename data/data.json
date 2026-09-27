@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-09-15T15:48:23.986Z",
+  "updatedAt": "2026-09-27T06:25:55.626Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -604,7 +604,7 @@
         {
           "id": "record_mu0stypr_rejlpnx19xth",
           "date": "2026-09-13",
-          "consumerId": "consumer_evan",
+          "consumerId": "consumer_mr8b5dem_r23g5l93jxnr",
           "amount": 550,
           "currency": "MXN",
           "amountCny": 217.36,
@@ -631,7 +631,7 @@
           ],
           "createdAt": "2026-09-14T05:25:07.456Z",
           "type": "expense",
-          "updatedAt": "2026-09-15T15:48:23.983Z",
+          "updatedAt": "2026-09-27T06:25:55.624Z",
           "history": [
             {
               "action": "created",
@@ -647,6 +647,11 @@
               "action": "updated",
               "at": "2026-09-15T15:48:23.983Z",
               "summary": "修改前: 刘彬 $550.00 / ¥217.36 → 修改后: 刘彬 $550.00 / ¥217.36"
+            },
+            {
+              "action": "updated",
+              "at": "2026-09-27T06:25:55.624Z",
+              "summary": "修改前: 刘彬 $550.00 / ¥217.36 → 修改后: 吴恒 $550.00 / ¥217.36"
             }
           ]
         },
@@ -1106,7 +1111,7 @@
         }
       ],
       "createdAt": "2026-07-05T21:36:20.135Z",
-      "updatedAt": "2026-09-15T15:48:23.983Z"
+      "updatedAt": "2026-09-27T06:25:55.624Z"
     }
   ]
 }
