@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-09-27T06:26:19.623Z",
+  "updatedAt": "2026-09-27T17:17:14.099Z",
   "ledgers": [
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
@@ -12,6 +12,46 @@
         "consumer_msw4kcs7_1yqf17i36l1ee"
       ],
       "records": [
+        {
+          "id": "record_muk2z3gs_1vyzhbd11gd9v",
+          "date": "2026-09-27",
+          "consumerId": "consumer_mr8b5dem_r23g5l93jxnr",
+          "amount": 1996,
+          "currency": "MXN",
+          "amountCny": 757.48,
+          "rateToCny": 0.3795,
+          "rateSource": "live",
+          "splitMode": "equal",
+          "splitParticipantIds": [
+            "consumer_evan",
+            "consumer_mr8b5dem_r23g5l93jxnr",
+            "consumer_msw4kcs7_1yqf17i36l1ee"
+          ],
+          "splitAmountsCny": {},
+          "note": "",
+          "attachments": [
+            {
+              "id": "img_muk2zpj1_4ynxfnlztc7j",
+              "path": "media/ledger_msw4lxnw_lskfuw1c0y3iz/record_muk2z3gs_1vyzhbd11gd9v/img_muk2zpj1_4ynxfnlztc7j.jpg",
+              "mime": "image/jpeg",
+              "size": 389029,
+              "width": 1200,
+              "height": 1600,
+              "sha": "500ebcbdc54c9aec9c0e41107c904cae8bf8bd7c",
+              "createdAt": "2026-09-27T17:17:08.987Z"
+            }
+          ],
+          "createdAt": "2026-09-27T17:16:40.397Z",
+          "type": "expense",
+          "updatedAt": "2026-09-27T17:17:08.987Z",
+          "history": [
+            {
+              "action": "created",
+              "at": "2026-09-27T17:17:08.987Z",
+              "summary": "吴恒 $1,996.00 / ¥757.48"
+            }
+          ]
+        },
         {
           "id": "settlement_mt680784_oru34lpcsbxj",
           "type": "settlement",
@@ -590,7 +630,7 @@
         }
       ],
       "createdAt": "2026-08-16T18:16:15.021Z",
-      "updatedAt": "2026-08-23T19:49:01.202Z"
+      "updatedAt": "2026-09-27T17:17:08.987Z"
     },
     {
       "id": "ledger_mr8b9gvb_w7o5ak1x6dv9i",
