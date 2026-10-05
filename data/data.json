@@ -1,7 +1,19 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-10-05T03:39:40.923Z",
+  "updatedAt": "2026-10-05T03:39:57.300Z",
   "ledgers": [
+    {
+      "id": "ledger_muupbe8k_s5hq1p1r9w43k",
+      "name": "墨西哥 8 号房",
+      "archived": false,
+      "participantIds": [
+        "consumer_evan",
+        "consumer_msw4kcs7_1yqf17i36l1ee"
+      ],
+      "records": [],
+      "createdAt": "2026-10-05T03:39:47.540Z",
+      "updatedAt": "2026-10-05T03:39:57.299Z"
+    },
     {
       "id": "ledger_msw4lxnw_lskfuw1c0y3iz",
       "name": "墨西哥三人",
